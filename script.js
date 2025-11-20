@@ -191,17 +191,6 @@ revealElements.forEach(element => {
     observer.observe(element);
 });
 
-// Image lazy loading simulation (for when you add real images)
-const observerImages = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            const img = entry.target;
-            // When you have real images, replace src here
-            img.classList.add('loaded');
-            observerImages.unobserve(img);
-        }
-    });
-});
 
 // Cursor effect on product cards
 productCards.forEach(card => {
