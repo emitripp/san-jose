@@ -332,7 +332,7 @@ async function proceedToCheckout() {
 async function createStripeCheckoutSession() {
     try {
         // Llamar al backend para crear una sesión de Stripe Checkout
-        const response = await fetch('http://localhost:3000/create-checkout-session', {
+        const response = await fetch('/create-checkout-session', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
