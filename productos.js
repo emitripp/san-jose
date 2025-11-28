@@ -355,8 +355,14 @@ async function createStripeCheckoutSession() {
 
         const { sessionId } = await response.json();
 
-        // Inicializar Stripe con tu clave publicable
-        const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        const { sessionId } = await response.json();
+
+        // Obtener la clave pública del backend
+        const configResponse = await fetch('/config');
+        const { publishableKey } = await configResponse.json();
+
+        // Inicializar Stripe con la clave dinámica
+        const stripe = Stripe(publishableKey);
 
         // Redirigir a Stripe Checkout
         const { error } = await stripe.redirectToCheckout({ sessionId });

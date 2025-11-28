@@ -17,6 +17,11 @@ app.use(express.static('.'));
 // In-memory storage for orders (REMOVED: Managed by Stripe Dashboard)
 // let orders = [];
 
+// Endpoint para obtener configuración del frontend
+app.get('/config', (req, res) => {
+    res.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
+});
+
 // Endpoint para crear sesión de checkout de Stripe
 app.post('/create-checkout-session', async (req, res) => {
     try {
