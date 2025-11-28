@@ -1,79 +1,42 @@
 // Product Data
+// Product Data
 const productsData = [
     {
         id: 1,
-        name: 'Gorra Legado Classic',
-        price: 450,
+        name: 'Gorra Legado',
+        price: 250,
         category: 'gorras',
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
-        description: 'Gorra de alta calidad con diseño exclusivo de Legado San José. Perfecta para el día a día.',
+        description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
         sizes: ['S/M', 'L/XL'],
         badge: 'new'
     },
     {
         id: 2,
-        name: 'Gorra Rodeo Edition',
-        price: 480,
-        category: 'gorras',
-        gradient: 'linear-gradient(135deg, #000 0%, #64401B 100%)',
-        description: 'Edición especial inspirada en la cultura del rodeo. Diseño premium con ajuste perfecto.',
-        sizes: ['S/M', 'L/XL']
-    },
-    {
-        id: 3,
-        name: 'Gorra Heritage Edition',
-        price: 470,
-        category: 'gorras',
-        gradient: 'linear-gradient(135deg, #EDE4CE 0%, #64401B 100%)',
-        description: 'Gorra heritage con bordado artesanal. Edición limitada.',
-        sizes: ['S/M', 'L/XL']
-    },
-    {
-        id: 4,
-        name: 'Playera Ranch Life',
-        price: 380,
-        category: 'playeras',
-        gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
-        description: 'Playera de algodón premium con estampado exclusivo. Cómoda y duradera.',
-        sizes: ['S', 'M', 'L', 'XL', 'XXL']
-    },
-    {
-        id: 5,
-        name: 'Playera Rancho Original',
-        price: 380,
-        category: 'playeras',
-        gradient: 'linear-gradient(135deg, #F5A84F 0%, #64401B 100%)',
-        description: 'Diseño original que representa el espíritu del rancho. Tela de primera calidad.',
-        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-        badge: 'sale'
-    },
-    {
-        id: 6,
-        name: 'Playera Heritage',
-        price: 400,
-        category: 'playeras',
-        gradient: 'linear-gradient(135deg, #EDE4CE 0%, #F5A84F 100%)',
-        description: 'Playera heritage con diseño vintage. Edición limitada.',
-        sizes: ['S', 'M', 'L', 'XL', 'XXL']
-    },
-    {
-        id: 7,
-        name: 'Mochila Legado San José',
-        price: 950,
+        name: 'Mochila Legado',
+        price: 3000,
         category: 'mochilas',
         gradient: 'linear-gradient(135deg, #64401B 0%, #EDE4CE 100%)',
-        description: 'Mochila espaciosa con múltiples compartimentos. Perfecta para viajes y uso diario.',
+        description: 'Mochila espaciosa y resistente, ideal para el día a día.',
         sizes: ['Única']
     },
     {
-        id: 8,
-        name: 'Maleta Viajera Premium',
-        price: 1850,
+        id: 3,
+        name: 'Maleta de Viaje',
+        price: 4000,
         category: 'maletas',
         gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
-        description: 'Maleta de lujo con ruedas giratorias y diseño robusto. Ideal para viajes largos.',
-        sizes: ['Mediana', 'Grande'],
-        badge: 'new'
+        description: 'Maleta premium con gran capacidad y durabilidad.',
+        sizes: ['Grande']
+    },
+    {
+        id: 4,
+        name: 'Playera Oficial',
+        price: 200,
+        category: 'playeras',
+        gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
+        description: 'Playera cómoda con el diseño auténtico de Legado San José.',
+        sizes: ['S', 'M', 'L', 'XL', 'XXL']
     }
 ];
 
