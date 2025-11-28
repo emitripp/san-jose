@@ -6,6 +6,7 @@ const productsData = [
         name: 'Gorra Legado',
         price: 250,
         category: 'gorras',
+        image: 'Fotos/gorra1 frente.png',
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
         sizes: ['S/M', 'L/XL'],
@@ -16,6 +17,7 @@ const productsData = [
         name: 'Mochila Legado',
         price: 3000,
         category: 'mochilas',
+        image: 'Fotos/Mochila.png',
         gradient: 'linear-gradient(135deg, #64401B 0%, #EDE4CE 100%)',
         description: 'Mochila espaciosa y resistente, ideal para el día a día.',
         sizes: ['Única']
@@ -25,6 +27,7 @@ const productsData = [
         name: 'Maleta de Viaje',
         price: 4000,
         category: 'maletas',
+        image: 'Fotos/Maleta.png',
         gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
         description: 'Maleta premium con gran capacidad y durabilidad.',
         sizes: ['Grande']
@@ -70,9 +73,10 @@ function renderProducts(filter = 'all') {
         <div class="product-card" data-category="${product.category}" data-id="${product.id}">
             ${product.badge ? `<div class="product-badge ${product.badge}">${product.badge === 'new' ? 'Nuevo' : 'Oferta'}</div>` : ''}
             <div class="product-image">
-                <div class="placeholder-product" style="background: ${product.gradient};">
-                    <span>${product.name}</span>
-                </div>
+                ${product.image
+            ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+            : `<div class="placeholder-product" style="background: ${product.gradient};"><span>${product.name}</span></div>`
+        }
                 <div class="product-overlay">
                     <button class="quick-view" onclick="openProductModal(${product.id})">Vista Rápida</button>
                 </div>
@@ -137,11 +141,9 @@ function openProductModal(productId) {
     const modal = document.getElementById('product-modal');
 
     // Set product details
-    document.getElementById('modal-image').innerHTML = `
-        <div class="placeholder-product" style="background: ${product.gradient};">
-            <span>${product.name}</span>
-        </div>
-    `;
+    document.getElementById('modal-image').innerHTML = product.image
+        ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<div class="placeholder-product" style="background: ${product.gradient};"><span>${product.name}</span></div>`;
     document.getElementById('modal-name').textContent = product.name;
     document.getElementById('modal-price').textContent = `$${product.price} MXN`;
     document.getElementById('modal-description').textContent = product.description;
@@ -222,7 +224,10 @@ function addToCartFromModal() {
             price: product.price,
             size: size,
             quantity: quantity,
-            gradient: product.gradient
+            size: size,
+            quantity: quantity,
+            gradient: product.gradient,
+            image: product.image
         });
     }
 
@@ -260,9 +265,10 @@ function updateCartUI() {
         cartItems.innerHTML = cart.map((item, index) => `
             <div class="cart-item">
                 <div class="cart-item-image">
-                    <div class="placeholder-product" style="background: ${item.gradient};">
-                        <span>${item.name.split(' ')[0]}</span>
-                    </div>
+                    ${item.image
+                ? `<img src="${item.image}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                : `<div class="placeholder-product" style="background: ${item.gradient};"><span>${item.name.split(' ')[0]}</span></div>`
+            }
                 </div>
                 <div class="cart-item-details">
                     <div class="cart-item-name">${item.name}</div>
