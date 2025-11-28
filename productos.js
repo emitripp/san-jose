@@ -355,8 +355,6 @@ async function createStripeCheckoutSession() {
 
         const { sessionId } = await response.json();
 
-        const { sessionId } = await response.json();
-
         // Obtener la clave pública del backend
         const configResponse = await fetch('/config');
         const { publishableKey } = await configResponse.json();
@@ -372,9 +370,7 @@ async function createStripeCheckoutSession() {
         }
     } catch (error) {
         console.error('Error:', error);
-        console.error('Error:', error);
         alert(`Error: ${error.message}`);
-        throw error;
         throw error;
     }
 }
