@@ -230,5 +230,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
-    console.log('Stripe configurado correctamente');
+    console.log('Configuración:');
+    console.log('- BASE_URL:', process.env.BASE_URL);
+    console.log('- Stripe Key Set:', !!process.env.STRIPE_SECRET_KEY);
 });

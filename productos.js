@@ -349,7 +349,8 @@ async function createStripeCheckoutSession() {
         });
 
         if (!response.ok) {
-            throw new Error('Error al crear sesión de pago');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al crear sesión de pago');
         }
 
         const { sessionId } = await response.json();
@@ -365,7 +366,9 @@ async function createStripeCheckoutSession() {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Hubo un error al procesar el pago. Por favor intenta de nuevo.');
+        console.error('Error:', error);
+        alert(`Error: ${error.message}`);
+        throw error;
         throw error;
     }
 }
