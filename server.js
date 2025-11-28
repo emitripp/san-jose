@@ -30,25 +30,44 @@ app.post('/create-checkout-session', async (req, res) => {
         // Verificar código interno
         const isInternalOrder = pickupCode === 'LEGADO_STAFF'; // Código hardcoded por simplicidad
 
-        // Definir opciones de envío
+        // Mapa de precios internos (Precio Goca)
+        const INTERNAL_PRICES = {
+            'Gorra Legado': 170,
+            'Mochila Legado': 1677,
+            'Maleta de Viaje': 2574,
+            'Playera Oficial': 100
+        };
+
+        // Lógica de precios internos
+        let finalItems = items;
+        if (isInternalOrder) {
+            finalItems = items.map(item => {
+                const internalPrice = INTERNAL_PRICES[item.name];
+                return {
+                    ...item,
+                    price: internalPrice !== undefined ? internalPrice : item.price
+                };
+            });
+        }
+
+        // Detectar si hay artículos pesados (Maleta o Mochila)
+        const hasHeavyItems = items.some(item =>
+            item.name.includes('Maleta') || item.name.includes('Mochila')
+        );
+
+        // Definir opciones de envío base
         let shippingOptions = [
             {
                 shipping_rate_data: {
                     type: 'fixed_amount',
                     fixed_amount: {
-                        amount: 15000, // $150 MXN
+                        amount: hasHeavyItems ? 25000 : 15000, // $250 si es pesado, $150 normal
                         currency: 'mxn',
                     },
-                    display_name: 'Envío estándar',
+                    display_name: hasHeavyItems ? 'Envío Estándar (Voluminoso)' : 'Envío Estándar',
                     delivery_estimate: {
-                        minimum: {
-                            unit: 'business_day',
-                            value: 5,
-                        },
-                        maximum: {
-                            unit: 'business_day',
-                            value: 7,
-                        },
+                        minimum: { unit: 'business_day', value: 5 },
+                        maximum: { unit: 'business_day', value: 7 },
                     },
                 },
             },
@@ -56,19 +75,13 @@ app.post('/create-checkout-session', async (req, res) => {
                 shipping_rate_data: {
                     type: 'fixed_amount',
                     fixed_amount: {
-                        amount: 25000, // $250 MXN
+                        amount: hasHeavyItems ? 35000 : 25000, // $350 si es pesado, $250 normal
                         currency: 'mxn',
                     },
-                    display_name: 'Envío express',
+                    display_name: hasHeavyItems ? 'Envío Express (Voluminoso)' : 'Envío Express',
                     delivery_estimate: {
-                        minimum: {
-                            unit: 'business_day',
-                            value: 1,
-                        },
-                        maximum: {
-                            unit: 'business_day',
-                            value: 3,
-                        },
+                        minimum: { unit: 'business_day', value: 1 },
+                        maximum: { unit: 'business_day', value: 3 },
                     },
                 },
             },
@@ -86,30 +99,24 @@ app.post('/create-checkout-session', async (req, res) => {
                         },
                         display_name: 'Recoger en Oficina (Interno)',
                         delivery_estimate: {
-                            minimum: {
-                                unit: 'business_day',
-                                value: 1,
-                            },
-                            maximum: {
-                                unit: 'business_day',
-                                value: 2,
-                            },
+                            minimum: { unit: 'business_day', value: 1 },
+                            maximum: { unit: 'business_day', value: 2 },
                         },
                     },
                 }
             ];
         }
-        const lineItems = items.map(item => ({
+
+        const lineItems = finalItems.map(item => ({
             price_data: {
                 currency: 'mxn',
                 product_data: {
                     name: item.name,
-                    description: `Talla: ${item.size}`,
                     metadata: {
                         size: item.size
                     }
                 },
-                unit_amount: item.price * 100, // Stripe usa centavos
+                unit_amount: item.price * 100, // Stripe espera centavos
             },
             quantity: item.quantity,
         }));
