@@ -1130,6 +1130,32 @@ a {
     .section-title {
         font-size: 36px;
     }
+
+    /* Footer Mobile */
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        text-align: center;
+    }
+
+    .footer-column ul li a:hover {
+        padding-left: 0;
+        /* Remove hover shift on mobile */
+    }
+
+    .social-links {
+        align-items: center;
+    }
+
+    /* Newsletter Mobile */
+    .newsletter-form {
+        flex-direction: column;
+        padding: 0 20px;
+    }
+
+    .newsletter-form button {
+        width: 100%;
+    }
 }
 
 @media (max-width: 480px) {
