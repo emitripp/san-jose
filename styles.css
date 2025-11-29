@@ -1067,10 +1067,12 @@ a {
 
     .nav-logo {
         order: 2;
-        /* Center */
-        margin: 0 auto;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 1002;
-        position: relative;
+        width: auto;
+        white-space: nowrap;
     }
 
     .nav-cart {
