@@ -293,27 +293,33 @@ function updateCartUI() {
 
     // Update count
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-    cartCount.textContent = totalItems;
+    if (cartCount) {
+        cartCount.textContent = totalItems;
+    }
 
     // Update items
-    if (cart.length === 0) {
-        cartItems.innerHTML = `
-            <div class="empty-cart">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="9" cy="21" r="1"></circle>
-                    <circle cx="20" cy="21" r="1"></circle>
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                </svg>
-                <p>Tu carrito está vacío</p>
-            </div>
-        `;
-    } else {
+    if (cartItems && cartTotalElement) {
+        if (cart.length === 0) {
+            cartItems.innerHTML = `
+                <div class="empty-cart">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <p>Tu carrito está vacío</p>
+                </div>
+            `;
+            cartTotalElement.innerHTML = '<span>Total:</span> <span>$0 MXN</span>';
+            return;
+        }
+
         cartItems.innerHTML = cart.map((item, index) => `
             <div class="cart-item">
                 <div class="cart-item-image">
                     ${item.image
                 ? `<img src="${item.image}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-                : `<div class="placeholder-product" style="background: ${item.gradient};"><span>${item.name.split(' ')[0]}</span></div>`
+                : `<div class="placeholder-product" style="background: ${item.gradient};"><span>${item.name}</span></div>`
             }
                 </div>
                 <div class="cart-item-details">
