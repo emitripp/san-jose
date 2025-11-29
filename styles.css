@@ -1066,6 +1066,8 @@ a {
         order: 2;
         /* Center */
         margin: 0 auto;
+        z-index: 1002;
+        position: relative;
     }
 
     .nav-cart {
@@ -1087,8 +1089,10 @@ a {
         align-items: center;
         gap: 40px;
         transition: left 0.4s ease;
+        transform: none;
+        /* Reset desktop transform */
         z-index: 1000;
-        /* Behind navbar */
+        /* Behind navbar elements */
         padding-top: 80px;
         /* Space for navbar */
     }
