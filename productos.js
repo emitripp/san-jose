@@ -93,44 +93,72 @@ function renderProducts(filter = 'all') {
 // Setup Event Listeners
 function setupEventListeners() {
     // Filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const filter = btn.getAttribute('data-filter');
-            renderProducts(filter);
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    if (filterBtns.length > 0) {
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filter = btn.getAttribute('data-filter');
+                renderProducts(filter);
+            });
         });
-    });
+    }
 
     // Cart toggle
-    document.getElementById('cart-toggle').addEventListener('click', () => {
-        document.getElementById('cart-sidebar').classList.add('open');
-    });
+    const cartToggle = document.getElementById('cart-toggle');
+    if (cartToggle) {
+        cartToggle.addEventListener('click', () => {
+            document.getElementById('cart-sidebar').classList.add('open');
+        });
+    }
 
-    document.getElementById('cart-close').addEventListener('click', () => {
-        document.getElementById('cart-sidebar').classList.remove('open');
-    });
+    const cartClose = document.getElementById('cart-close');
+    if (cartClose) {
+        cartClose.addEventListener('click', () => {
+            document.getElementById('cart-sidebar').classList.remove('open');
+        });
+    }
 
     // Modal close
-    document.getElementById('modal-close').addEventListener('click', closeProductModal);
-    document.getElementById('modal-overlay').addEventListener('click', closeProductModal);
+    const modalClose = document.getElementById('modal-close');
+    if (modalClose) {
+        modalClose.addEventListener('click', closeProductModal);
+    }
+
+    const modalOverlay = document.getElementById('modal-overlay');
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', closeProductModal);
+    }
 
     // Quantity buttons
-    document.getElementById('qty-plus').addEventListener('click', () => {
-        const input = document.getElementById('quantity');
-        input.value = Math.min(10, parseInt(input.value) + 1);
-    });
+    const qtyPlus = document.getElementById('qty-plus');
+    if (qtyPlus) {
+        qtyPlus.addEventListener('click', () => {
+            const input = document.getElementById('quantity');
+            input.value = Math.min(10, parseInt(input.value) + 1);
+        });
+    }
 
-    document.getElementById('qty-minus').addEventListener('click', () => {
-        const input = document.getElementById('quantity');
-        input.value = Math.max(1, parseInt(input.value) - 1);
-    });
+    const qtyMinus = document.getElementById('qty-minus');
+    if (qtyMinus) {
+        qtyMinus.addEventListener('click', () => {
+            const input = document.getElementById('quantity');
+            input.value = Math.max(1, parseInt(input.value) - 1);
+        });
+    }
 
     // Add to cart from modal
-    document.getElementById('add-to-cart-btn').addEventListener('click', addToCartFromModal);
+    const addToCartBtn = document.getElementById('add-to-cart-btn');
+    if (addToCartBtn) {
+        addToCartBtn.addEventListener('click', addToCartFromModal);
+    }
 
     // Checkout button
-    document.getElementById('checkout-btn').addEventListener('click', proceedToCheckout);
+    const checkoutBtn = document.getElementById('checkout-btn');
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', proceedToCheckout);
+    }
 }
 
 // Open Product Modal
