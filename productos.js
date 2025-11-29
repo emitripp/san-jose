@@ -83,7 +83,7 @@ function renderProducts(filter = 'all') {
             </div>
             <div class="product-info">
                 <h3 class="product-name">${product.name}</h3>
-                <p class="product-price">$${product.price} MXN</p>
+                <div class="product-price">$${product.price.toLocaleString('es-MX')} MXN</div>
                 <button class="buy-now-btn" onclick="openProductModal(${product.id})">Comprar Ahora</button>
             </div>
         </div>
@@ -145,7 +145,7 @@ function openProductModal(productId) {
         ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">`
         : `<div class="placeholder-product" style="background: ${product.gradient};"><span>${product.name}</span></div>`;
     document.getElementById('modal-name').textContent = product.name;
-    document.getElementById('modal-price').textContent = `$${product.price} MXN`;
+    document.getElementById('modal-price').textContent = `$${product.price.toLocaleString('es-MX')} MXN`;
     document.getElementById('modal-description').textContent = product.description;
 
     // Set sizes
@@ -224,8 +224,6 @@ function addToCartFromModal() {
             price: product.price,
             size: size,
             quantity: quantity,
-            size: size,
-            quantity: quantity,
             gradient: product.gradient,
             image: product.image
         });
@@ -243,7 +241,7 @@ function addToCartFromModal() {
 function updateCartUI() {
     const cartCount = document.getElementById('cart-count');
     const cartItems = document.getElementById('cart-items');
-    const cartTotal = document.getElementById('cart-total');
+    const cartTotalElement = document.getElementById('cart-total');
 
     // Update count
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -273,25 +271,24 @@ function updateCartUI() {
                 <div class="cart-item-details">
                     <div class="cart-item-name">${item.name}</div>
                     <div class="cart-item-options">Talla: ${item.size}</div>
-                    <div class="cart-item-price">$${item.price} MXN</div>
+                    <div class="cart-item-price">$${item.price.toLocaleString('es-MX')} MXN</div>
                     <div class="cart-item-quantity">
-                        <button class="cart-qty-btn" onclick="updateCartQuantity(${index}, -1)">-</button>
+                        <button class="cart-qty-btn" onclick="updateCartItem(${index}, -1)">-</button>
                         <span class="cart-qty-value">${item.quantity}</span>
-                        <button class="cart-qty-btn" onclick="updateCartQuantity(${index}, 1)">+</button>
+                        <button class="cart-qty-btn" onclick="updateCartItem(${index}, 1)">+</button>
                     </div>
                 </div>
-                <button class="cart-item-remove" onclick="removeFromCart(${index})">×</button>
+                <button class="cart-item-remove" onclick="removeFromCart(${index})">&times;</button>
             </div>
         `).join('');
-    }
 
-    // Update total
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    cartTotal.textContent = `$${total.toLocaleString()} MXN`;
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        cartTotalElement.innerHTML = `<span>Total:</span> <span>$${total.toLocaleString('es-MX')} MXN</span>`;
+    }
 }
 
 // Update Cart Quantity
-function updateCartQuantity(index, change) {
+function updateCartItem(index, change) {
     cart[index].quantity += change;
     if (cart[index].quantity <= 0) {
         cart.splice(index, 1);

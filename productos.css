@@ -326,6 +326,7 @@
         opacity: 0;
         transform: translateY(50px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -535,6 +536,16 @@
 
     .modal-details {
         padding: 30px 20px;
+        padding-top: 60px;
+        /* Space for close button */
+    }
+
+    .modal-close {
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        z-index: 100;
+        /* Ensure it's above everything */
     }
 
     .shop-header {
@@ -561,5 +572,7 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
