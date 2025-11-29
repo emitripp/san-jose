@@ -1049,10 +1049,13 @@ a {
         background-color: var(--black);
     }
 
-    .container,
     .nav-container {
         padding: 0;
         justify-content: space-between;
+    }
+
+    .container {
+        padding: 0 20px;
     }
 
     .menu-toggle {
