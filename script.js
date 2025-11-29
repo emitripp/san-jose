@@ -9,7 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
         menuToggle.classList.toggle('active');
         navMenu.classList.toggle('active');
         overlay.classList.toggle('active');
-        document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+
+        const isActive = navMenu.classList.contains('active');
+        document.body.classList.toggle('no-scroll', isActive);
     }
 
     menuToggle.addEventListener('click', toggleMenu);

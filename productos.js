@@ -257,7 +257,7 @@ function openProductModal(productId) {
 
     // Show modal
     modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('no-scroll');
 }
 
 // Helper: Change Main Image
@@ -277,7 +277,7 @@ function selectVariant(btn) {
 function closeProductModal() {
     const modal = document.getElementById('product-modal');
     modal.classList.remove('active');
-    document.body.style.overflow = '';
+    document.body.classList.remove('no-scroll');
 }
 
 // Add to Cart from Modal
