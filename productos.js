@@ -6,10 +6,16 @@ const productsData = [
         name: 'Gorra Legado',
         price: 250,
         category: 'gorras',
-        image: 'Fotos/gorra1 frente.png',
+        image: 'Fotos/gorra1 frente.png', // Default image
+        images: ['Fotos/gorra1 frente.png', 'Fotos/gorra1 frente.png', 'Fotos/gorra1 frente.png'], // Placeholder for multiple angles
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
-        sizes: ['S/M', 'L/XL'],
+        sizes: ['S', 'M', 'L'],
+        variants: [
+            { name: 'Negra', color: '#000000' },
+            { name: 'Café', color: '#64401B' },
+            { name: 'Beige', color: '#EDE4CE' }
+        ],
         badge: 'new'
     },
     {
@@ -18,9 +24,11 @@ const productsData = [
         price: 3000,
         category: 'mochilas',
         image: 'Fotos/Mochila.png',
+        images: ['Fotos/Mochila.png', 'Fotos/Mochila.png'],
         gradient: 'linear-gradient(135deg, #64401B 0%, #EDE4CE 100%)',
         description: 'Mochila espaciosa y resistente, ideal para el día a día.',
-        sizes: ['Única']
+        sizes: ['Única'],
+        variants: [] // No variants
     },
     {
         id: 3,
@@ -28,18 +36,29 @@ const productsData = [
         price: 4000,
         category: 'maletas',
         image: 'Fotos/Maleta.png',
+        images: ['Fotos/Maleta.png', 'Fotos/Maleta.png'],
         gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
         description: 'Maleta premium con gran capacidad y durabilidad.',
-        sizes: ['Grande']
+        sizes: ['Grande'],
+        variants: [] // No variants
     },
     {
         id: 4,
         name: 'Playera Oficial',
         price: 200,
         category: 'playeras',
+        image: 'Fotos/Logotipo Rancho San José-12.png', // Placeholder
+        images: ['Fotos/Logotipo Rancho San José-12.png'],
         gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
         description: 'Playera cómoda con el diseño auténtico de Legado San José.',
-        sizes: ['S', 'M', 'L', 'XL', 'XXL']
+        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+        variants: [
+            { name: 'Negra', color: '#000000' },
+            { name: 'Blanca', color: '#FFFFFF' },
+            { name: 'Azul', color: '#1e3a8a' },
+            { name: 'Gris', color: '#4b5563' },
+            { name: 'Roja', color: '#dc2626' }
+        ]
     }
 ];
 
@@ -167,18 +186,56 @@ function openProductModal(productId) {
     if (!product) return;
 
     const modal = document.getElementById('product-modal');
+    modal.dataset.productId = productId;
 
-    // Set product details
-    document.getElementById('modal-image').innerHTML = product.image
-        ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-        : `<div class="placeholder-product" style="background: ${product.gradient};"><span>${product.name}</span></div>`;
+    // 1. Render Gallery (Main Image + Thumbnails)
+    const modalImageContainer = document.getElementById('modal-image');
+    const images = product.images && product.images.length > 0 ? product.images : [product.image];
+
+    let galleryHTML = `
+        <div class="main-image-container">
+            <img src="${images[0]}" id="main-product-image" alt="${product.name}">
+        </div>
+    `;
+
+    if (images.length > 1) {
+        galleryHTML += `
+            <div class="thumbnail-container">
+                ${images.map((img, index) => `
+                    <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeMainImage('${img}', this)">
+                        <img src="${img}" alt="Vista ${index + 1}">
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    modalImageContainer.innerHTML = galleryHTML;
+
+    // 2. Render Details
     document.getElementById('modal-name').textContent = product.name;
     document.getElementById('modal-price').textContent = `$${product.price.toLocaleString('es-MX')} MXN`;
     document.getElementById('modal-description').textContent = product.description;
 
-    // Set sizes
+    // 3. Render Variants (Colors)
+    const variantGroup = document.getElementById('variant-group'); // Need to add this to HTML
+    if (product.variants && product.variants.length > 0) {
+        variantGroup.style.display = 'block';
+        const variantContainer = document.getElementById('variant-options'); // Need to add this to HTML
+        variantContainer.innerHTML = product.variants.map((variant, index) => `
+            <button class="variant-btn ${index === 0 ? 'active' : ''}" 
+                    data-variant="${variant.name}" 
+                    style="background-color: ${variant.color};" 
+                    title="${variant.name}"
+                    onclick="selectVariant(this)">
+            </button>
+        `).join('');
+    } else {
+        variantGroup.style.display = 'none';
+    }
+
+    // 4. Render Sizes (Separate Buttons)
     const sizeGroup = document.getElementById('size-group');
-    if (product.sizes && product.sizes.length > 1) {
+    if (product.sizes && product.sizes.length > 0) {
         sizeGroup.style.display = 'block';
         document.getElementById('size-buttons').innerHTML = product.sizes.map(size => `
             <button class="size-btn" data-size="${size}">${size}</button>
@@ -198,12 +255,22 @@ function openProductModal(productId) {
     // Reset quantity
     document.getElementById('quantity').value = 1;
 
-    // Store current product ID
-    modal.dataset.productId = productId;
-
     // Show modal
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+}
+
+// Helper: Change Main Image
+function changeMainImage(src, thumb) {
+    document.getElementById('main-product-image').src = src;
+    document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+    thumb.classList.add('active');
+}
+
+// Helper: Select Variant
+function selectVariant(btn) {
+    document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
 }
 
 // Close Product Modal
@@ -232,25 +299,35 @@ function addToCartFromModal() {
 
         // Get selected size
         const selectedSizeBtn = document.querySelector('.size-btn.active');
-        const sizeGroup = document.getElementById('size-group');
-
         let size = null;
-        if (sizeGroup.style.display !== 'none' && product.sizes.length > 1) {
+        if (product.sizes.length > 0) {
             if (!selectedSizeBtn) {
                 alert('Por favor selecciona una talla');
                 return;
             }
             size = selectedSizeBtn.dataset.size;
         } else {
-            size = product.sizes[0];
+            size = 'Única';
+        }
+
+        // Get selected variant (Color)
+        const selectedVariantBtn = document.querySelector('.variant-btn.active');
+        let variant = null;
+        if (product.variants && product.variants.length > 0) {
+            if (!selectedVariantBtn) {
+                // Default to first if none selected (though UI selects first by default)
+                variant = product.variants[0].name;
+            } else {
+                variant = selectedVariantBtn.dataset.variant;
+            }
         }
 
         const quantityInput = document.getElementById('quantity');
         const quantity = parseInt(quantityInput.value) || 1;
 
-        // Check if item already in cart
+        // Check if item already in cart (match ID, Size, AND Variant)
         const existingItemIndex = cart.findIndex(item =>
-            item.id === productId && item.size === size
+            item.id === productId && item.size === size && item.variant === variant
         );
 
         if (existingItemIndex > -1) {
@@ -261,9 +338,10 @@ function addToCartFromModal() {
                 name: product.name,
                 price: product.price,
                 size: size,
+                variant: variant, // Store the variant (color)
                 quantity: quantity,
                 gradient: product.gradient,
-                image: product.image
+                image: product.image // Use main image for cart thumbnail
             });
         }
 

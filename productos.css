@@ -522,43 +522,120 @@
         right: -100%;
     }
 
+    /* Gallery Styles */
+    .main-image-container {
+        width: 100%;
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: var(--gray-light);
+    }
+
+    .main-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        /* Changed to contain to see full product */
+    }
+
+    .thumbnail-container {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        overflow-x: auto;
+        justify-content: center;
+    }
+
+    .thumbnail {
+        width: 60px;
+        height: 60px;
+        border: 2px solid transparent;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.3s ease;
+    }
+
+    .thumbnail.active {
+        border-color: var(--primary);
+        opacity: 1;
+    }
+
+    .thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Variant Styles */
+    .variant-options {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .variant-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        border: 2px solid var(--gray-light);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .variant-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .variant-btn.active {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--primary);
+    }
+
+    /* Mobile Modal Adjustments */
     .modal-content {
         z-index: 3001;
-        /* Ensure content is above overlay */
+        max-height: 95vh;
+        /* Slightly less than full height */
+        display: flex;
+        flex-direction: column;
     }
 
     .modal-body {
         grid-template-columns: 1fr;
+        overflow-y: auto;
+        /* Enable scrolling for content */
     }
 
     .modal-image {
-        min-height: 300px;
-    }
-
-    .modal-image .placeholder-product {
-        min-height: 300px;
+        min-height: auto;
+        /* Remove fixed height */
+        display: block;
+        /* Allow normal stacking */
+        background: transparent;
     }
 
     .modal-details {
-        padding: 30px 20px;
-        padding-top: 60px;
-        /* Space for close button */
+        padding: 20px;
+        padding-top: 20px;
     }
 
     .modal-close {
         position: fixed;
-        /* Fixed on mobile to stay visible */
         top: 20px;
         right: 20px;
         background: rgba(255, 255, 255, 0.95);
         z-index: 3002;
-        /* Ensure it's above content */
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
     .add-to-cart-btn {
         position: relative;
         z-index: 10;
+        margin-bottom: 20px;
+        /* Add space at bottom */
     }
 
     .shop-header {
