@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,29 +8,43 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="productos.css">
 </head>
+
 <body>
     <!-- Navigation -->
-    <nav class="navbar scrolled" id="navbar">
+    <nav class="navbar" id="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <a href="index.html"><h1>LEGADO SAN JOSÉ</h1></a>
+                <a href="index.html">
+                    <h1>LEGADO SAN JOSÉ</h1>
+                </a>
             </div>
+
+            <div class="menu-toggle" id="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
             <ul class="nav-menu">
-                <li><a href="index.html#home">Inicio</a></li>
-                <li><a href="productos.html">Tienda</a></li>
+                <li><a href="index.html">Inicio</a></li>
+                <li><a href="productos.html" class="active">Productos</a></li>
                 <li><a href="index.html#nosotros">Nosotros</a></li>
                 <li><a href="index.html#contacto">Contacto</a></li>
             </ul>
-            <div class="nav-cart" id="cart-toggle">
+
+            <div class="nav-cart" onclick="toggleCart()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="9" cy="21" r="1"></circle>
                     <circle cx="20" cy="21" r="1"></circle>
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                 </svg>
-                <span class="cart-count" id="cart-count">0</span>
+                <span class="cart-count">0</span>
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
 
     <!-- Shop Header -->
     <section class="shop-header">
@@ -75,9 +90,10 @@
                 <span>Total:</span>
                 <span id="cart-total">$0 MXN</span>
             </div>
-            
+
             <div class="promo-code-section" style="margin-bottom: 15px;">
-                <input type="text" id="internal-code" placeholder="Código Interno (Opcional)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px;">
+                <input type="text" id="internal-code" placeholder="Código Interno (Opcional)"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px;">
                 <small style="color: #666; font-size: 0.8em;">Solo para personal autorizado</small>
             </div>
 
@@ -169,6 +185,8 @@
     <!-- Stripe.js -->
     <script src="https://js.stripe.com/v3/"></script>
     <script src="stripe-config.js"></script>
+    <script src="script.js"></script>
     <script src="productos.js"></script>
 </body>
+
 </html>

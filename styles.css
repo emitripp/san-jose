@@ -1057,8 +1057,9 @@ a {
     .nav-menu {
         position: fixed;
         top: 0;
-        left: auto;
-        right: -100%;
+        left: -100%;
+        /* Start off-screen to the left */
+        right: auto;
         width: 70%;
         height: 100vh;
         background: var(--white);
@@ -1066,14 +1067,17 @@ a {
         justify-content: center;
         align-items: center;
         gap: 40px;
-        transition: right 0.4s ease;
-        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        transition: left 0.4s ease;
+        /* Animate left property */
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+        /* Shadow on the right */
         z-index: 1000;
         padding: 0;
     }
 
     .nav-menu.active {
-        right: 0;
+        left: 0;
+        /* Slide in to 0 */
     }
 
     .nav-menu a {
