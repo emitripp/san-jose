@@ -187,54 +187,74 @@ function closeProductModal() {
 
 // Add to Cart from Modal
 function addToCartFromModal() {
-    const modal = document.getElementById('product-modal');
-    const productId = parseInt(modal.dataset.productId);
-    const product = productsData.find(p => p.id === productId);
-
-    if (!product) return;
-
-    // Get selected size
-    const selectedSizeBtn = document.querySelector('.size-btn.active');
-    const sizeGroup = document.getElementById('size-group');
-
-    let size = null;
-    if (sizeGroup.style.display !== 'none' && product.sizes.length > 1) {
-        if (!selectedSizeBtn) {
-            alert('Por favor selecciona una talla');
+    try {
+        const modal = document.getElementById('product-modal');
+        if (!modal.dataset.productId) {
+            console.error('No product ID in modal dataset');
             return;
         }
-        size = selectedSizeBtn.dataset.size;
-    } else {
-        size = product.sizes[0];
+
+        const productId = parseInt(modal.dataset.productId);
+        const product = productsData.find(p => p.id === productId);
+
+        if (!product) {
+            alert('Error: Producto no encontrado');
+            return;
+        }
+
+        // Get selected size
+        const selectedSizeBtn = document.querySelector('.size-btn.active');
+        const sizeGroup = document.getElementById('size-group');
+
+        let size = null;
+        if (sizeGroup.style.display !== 'none' && product.sizes.length > 1) {
+            if (!selectedSizeBtn) {
+                alert('Por favor selecciona una talla');
+                return;
+            }
+            size = selectedSizeBtn.dataset.size;
+        } else {
+            size = product.sizes[0];
+        }
+
+        const quantityInput = document.getElementById('quantity');
+        const quantity = parseInt(quantityInput.value) || 1;
+
+        // Check if item already in cart
+        const existingItemIndex = cart.findIndex(item =>
+            item.id === productId && item.size === size
+        );
+
+        if (existingItemIndex > -1) {
+            cart[existingItemIndex].quantity += quantity;
+        } else {
+            cart.push({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                size: size,
+                quantity: quantity,
+                gradient: product.gradient,
+                image: product.image
+            });
+        }
+
+        // Save to localStorage
+        localStorage.setItem('cart', JSON.stringify(cart));
+
+        // Update UI
+        updateCartUI();
+
+        // Close modal
+        closeProductModal();
+
+        // Open cart sidebar
+        document.getElementById('cart-sidebar').classList.add('open');
+
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        alert('Hubo un error al agregar al carrito: ' + error.message);
     }
-
-    const quantity = parseInt(document.getElementById('quantity').value);
-
-    // Check if item already in cart
-    const existingItemIndex = cart.findIndex(item =>
-        item.id === productId && item.size === size
-    );
-
-    if (existingItemIndex > -1) {
-        cart[existingItemIndex].quantity += quantity;
-    } else {
-        cart.push({
-            id: productId,
-            name: product.name,
-            price: product.price,
-            size: size,
-            quantity: quantity,
-            gradient: product.gradient,
-            image: product.image
-        });
-    }
-
-    saveCart();
-    updateCartUI();
-    closeProductModal();
-
-    // Show cart
-    document.getElementById('cart-sidebar').classList.add('open');
 }
 
 // Update Cart UI
