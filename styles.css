@@ -1156,6 +1156,17 @@ a {
     .newsletter-form button {
         width: 100%;
     }
+
+    /* Reduce spacing on mobile */
+    .gallery-section {
+        padding: 60px 0 30px;
+        /* Reduced bottom padding */
+    }
+
+    .about-section {
+        padding: 30px 0 60px;
+        /* Reduced top padding */
+    }
 }
 
 @media (max-width: 480px) {
