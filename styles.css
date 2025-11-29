@@ -1146,3 +1146,12 @@ a {
         font-size: 40px;
     }
 }
+
+/* Utility Classes */
+.no-scroll {
+    overflow: hidden !important;
+    height: 100vh;
+    /* Prevent scrolling on mobile */
+    touch-action: none;
+    /* Disable touch scrolling */
+}
