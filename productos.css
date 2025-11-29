@@ -522,6 +522,11 @@
         right: -100%;
     }
 
+    .modal-content {
+        z-index: 3001;
+        /* Ensure content is above overlay */
+    }
+
     .modal-body {
         grid-template-columns: 1fr;
     }
@@ -541,11 +546,19 @@
     }
 
     .modal-close {
-        top: 15px;
-        right: 15px;
-        background: rgba(255, 255, 255, 0.9);
-        z-index: 100;
-        /* Ensure it's above everything */
+        position: fixed;
+        /* Fixed on mobile to stay visible */
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        z-index: 3002;
+        /* Ensure it's above content */
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .add-to-cart-btn {
+        position: relative;
+        z-index: 10;
     }
 
     .shop-header {
