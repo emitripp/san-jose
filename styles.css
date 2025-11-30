@@ -1197,3 +1197,9 @@ a {
     touch-action: none;
     /* Disable touch scrolling */
 }
+
+@media (max-width: 768px) {
+    .scroll-indicator {
+        display: none;
+    }
+}

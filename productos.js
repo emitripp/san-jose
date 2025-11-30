@@ -15,8 +15,7 @@ const productsData = [
             { name: 'Negra', color: '#000000' },
             { name: 'Café', color: '#64401B' },
             { name: 'Beige', color: '#EDE4CE' }
-        ],
-        badge: 'new'
+        ]
     },
     {
         id: 2,
