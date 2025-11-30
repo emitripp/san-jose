@@ -240,15 +240,14 @@ function openProductModal(productId) {
         variantGroup.style.display = 'block';
         const variantContainer = document.getElementById('variant-options'); // Need to add this to HTML
         variantContainer.innerHTML = product.variants.map((variant, index) => `
-        variantContainer.innerHTML = product.variants.map((variant, index) => `
-            < button class= "variant-btn ${index === 0 ? 'active' : ''}" 
-                    data - variant="${variant.name}" 
-                    data - image="${variant.image || ''}"
-                    style = "background-color: ${variant.color};" 
-                    title = "${variant.name}"
-                    onclick = "selectVariant(this)" >
-            </button >
-            `).join('');
+            <button class="variant-btn ${index === 0 ? 'active' : ''}" 
+                    data-variant="${variant.name}" 
+                    data-image="${variant.image || ''}"
+                    style="background-color: ${variant.color};" 
+                    title="${variant.name}"
+                    onclick="selectVariant(this)">
+            </button>
+        `).join('');
     } else {
         variantGroup.style.display = 'none';
     }
@@ -258,7 +257,7 @@ function openProductModal(productId) {
     if (product.sizes && product.sizes.length > 0) {
         sizeGroup.style.display = 'block';
         document.getElementById('size-buttons').innerHTML = product.sizes.map(size => `
-            < button class= "size-btn" data - size="${size}" > ${ size }</button >
+            < button class= "size-btn" data - size="${size}" > ${size}</button >
             `).join('');
 
         // Add size selection handlers
@@ -534,7 +533,7 @@ async function createStripeCheckoutSession() {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert(`Error: ${ error.message }`);
+        alert(`Error: ${error.message}`);
         throw error;
     }
 }
