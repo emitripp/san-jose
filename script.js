@@ -52,4 +52,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener("scroll", reveal);
     reveal(); // Trigger on load
+
+    // Hero Video Fade Effect
+    const heroVideo = document.querySelector('.hero-video');
+    const heroGradient = document.querySelector('.hero-gradient');
+    const heroOverlay = document.querySelector('.hero-overlay');
+
+    if (heroVideo) {
+        heroVideo.addEventListener('ended', () => {
+            if (heroGradient) heroGradient.classList.add('visible');
+            heroVideo.classList.add('fade-out');
+            if (heroOverlay) heroOverlay.classList.add('fade-out');
+        });
+    }
 });
