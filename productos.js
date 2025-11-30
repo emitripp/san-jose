@@ -10,7 +10,7 @@ const productsData = [
         images: ['Fotos/gorra1 frente.png', 'Fotos/gorra1 frente.png', 'Fotos/gorra1 frente.png'], // Placeholder for multiple angles
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
-        sizes: ['S', 'M', 'L'],
+        sizes: [], // No sizes
         variants: [
             { name: 'Negra', color: '#000000' },
             { name: 'Café', color: '#64401B' },
@@ -26,7 +26,7 @@ const productsData = [
         images: ['Fotos/Mochila.png', 'Fotos/Mochila.png'],
         gradient: 'linear-gradient(135deg, #64401B 0%, #EDE4CE 100%)',
         description: 'Mochila espaciosa y resistente, ideal para el día a día.',
-        sizes: ['Única'],
+        sizes: [], // No sizes
         variants: [] // No variants
     },
     {
@@ -38,7 +38,7 @@ const productsData = [
         images: ['Fotos/Maleta.png', 'Fotos/Maleta.png'],
         gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
         description: 'Maleta premium con gran capacidad y durabilidad.',
-        sizes: ['Grande'],
+        sizes: [], // No sizes
         variants: [] // No variants
     },
     {
