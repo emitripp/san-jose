@@ -77,6 +77,8 @@ h3,
 h4 {
     font-family: 'Rawgly', 'Montserrat', sans-serif;
     font-weight: 900;
+    line-height: 1.1;
+    /* Fix selection issues with custom font */
 }
 
 a {
