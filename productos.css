@@ -359,12 +359,12 @@
 .modal-body {
     display: grid;
     grid-template-columns: 1.2fr 0.8fr;
-    /* More space for image */
-    gap: 0;
-    /* Remove gap, let padding handle it */
-    max-height: 90vh;
-    overflow-y: auto;
+    /* Image gets more space */
+    gap: 40px;
+    padding: 40px;
     background: #fff;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .modal-image {
@@ -548,10 +548,11 @@
     display: flex;
     gap: 10px;
     padding: 15px 0;
-    overflow-x: auto;
-    justify-content: flex-start;
-    /* Align start to prevent cutting off when scrolling */
-    max-width: 100%;
+    flex-wrap: wrap;
+    /* Allow wrapping to multiple rows */
+    justify-content: center;
+    /* Center thumbnails */
+    width: 100%;
 }
 
 .thumbnail {
