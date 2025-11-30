@@ -549,7 +549,9 @@
     gap: 10px;
     padding: 15px 0;
     overflow-x: auto;
-    justify-content: center;
+    justify-content: flex-start;
+    /* Align start to prevent cutting off when scrolling */
+    max-width: 100%;
 }
 
 .thumbnail {

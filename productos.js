@@ -47,35 +47,35 @@ const productsData = [
         name: 'Playera Oficial',
         price: 200,
         category: 'playeras',
-        image: 'fotos/playeras/optimized/blanco.png', // Default to White
+        image: 'Fotos/playeras/optimized/blanco.png', // Default to White
         images: [
-            'fotos/playeras/optimized/blanco.png',
-            'fotos/playeras/optimized/azul cielo.png',
-            'fotos/playeras/optimized/azul marino.png',
-            'fotos/playeras/optimized/azul rey.png',
-            'fotos/playeras/optimized/gris.png',
-            'fotos/playeras/optimized/hueso.png',
-            'fotos/playeras/optimized/lila.png',
-            'fotos/playeras/optimized/rojo.png',
-            'fotos/playeras/optimized/verde militar.png',
-            'fotos/playeras/optimized/verde.png',
-            'fotos/playeras/optimized/vino.png'
+            'Fotos/playeras/optimized/blanco.png',
+            'Fotos/playeras/optimized/azul cielo.png',
+            'Fotos/playeras/optimized/azul marino.png',
+            'Fotos/playeras/optimized/azul rey.png',
+            'Fotos/playeras/optimized/gris.png',
+            'Fotos/playeras/optimized/hueso.png',
+            'Fotos/playeras/optimized/lila.png',
+            'Fotos/playeras/optimized/rojo.png',
+            'Fotos/playeras/optimized/verde militar.png',
+            'Fotos/playeras/optimized/verde.png',
+            'Fotos/playeras/optimized/vino.png'
         ],
         gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
         description: 'Playera cómoda con el diseño auténtico de Legado San José.',
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
         variants: [
-            { name: 'Blanca', color: '#FFFFFF', image: 'fotos/playeras/optimized/blanco.png' },
-            { name: 'Azul Cielo', color: '#87CEEB', image: 'fotos/playeras/optimized/azul cielo.png' },
-            { name: 'Azul Marino', color: '#000080', image: 'fotos/playeras/optimized/azul marino.png' },
-            { name: 'Azul Rey', color: '#4169E1', image: 'fotos/playeras/optimized/azul rey.png' },
-            { name: 'Gris', color: '#808080', image: 'fotos/playeras/optimized/gris.png' },
-            { name: 'Hueso', color: '#F5F5DC', image: 'fotos/playeras/optimized/hueso.png' },
-            { name: 'Lila', color: '#C8A2C8', image: 'fotos/playeras/optimized/lila.png' },
-            { name: 'Roja', color: '#DC143C', image: 'fotos/playeras/optimized/rojo.png' },
-            { name: 'Verde Militar', color: '#4B5320', image: 'fotos/playeras/optimized/verde militar.png' },
-            { name: 'Verde', color: '#008000', image: 'fotos/playeras/optimized/verde.png' },
-            { name: 'Vino', color: '#722F37', image: 'fotos/playeras/optimized/vino.png' }
+            { name: 'Blanca', color: '#FFFFFF', image: 'Fotos/playeras/optimized/blanco.png' },
+            { name: 'Azul Cielo', color: '#87CEEB', image: 'Fotos/playeras/optimized/azul cielo.png' },
+            { name: 'Azul Marino', color: '#000080', image: 'Fotos/playeras/optimized/azul marino.png' },
+            { name: 'Azul Rey', color: '#4169E1', image: 'Fotos/playeras/optimized/azul rey.png' },
+            { name: 'Gris', color: '#808080', image: 'Fotos/playeras/optimized/gris.png' },
+            { name: 'Hueso', color: '#F5F5DC', image: 'Fotos/playeras/optimized/hueso.png' },
+            { name: 'Lila', color: '#C8A2C8', image: 'Fotos/playeras/optimized/lila.png' },
+            { name: 'Roja', color: '#DC143C', image: 'Fotos/playeras/optimized/rojo.png' },
+            { name: 'Verde Militar', color: '#4B5320', image: 'Fotos/playeras/optimized/verde militar.png' },
+            { name: 'Verde', color: '#008000', image: 'Fotos/playeras/optimized/verde.png' },
+            { name: 'Vino', color: '#722F37', image: 'Fotos/playeras/optimized/vino.png' }
         ]
     }
 ];
@@ -257,8 +257,8 @@ function openProductModal(productId) {
     if (product.sizes && product.sizes.length > 0) {
         sizeGroup.style.display = 'block';
         document.getElementById('size-buttons').innerHTML = product.sizes.map(size => `
-            < button class= "size-btn" data - size="${size}" > ${size}</button >
-            `).join('');
+            <button class="size-btn" data-size="${size}">${size}</button>
+        `).join('');
 
         // Add size selection handlers
         document.querySelectorAll('.size-btn').forEach(btn => {
