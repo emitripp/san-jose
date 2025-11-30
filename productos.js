@@ -47,17 +47,35 @@ const productsData = [
         name: 'Playera Oficial',
         price: 200,
         category: 'playeras',
-        image: 'Fotos/Logotipo Rancho San José-12.png', // Placeholder
-        images: ['Fotos/Logotipo Rancho San José-12.png'],
+        image: 'fotos/playeras/optimized/blanco.png', // Default to White
+        images: [
+            'fotos/playeras/optimized/blanco.png',
+            'fotos/playeras/optimized/azul cielo.png',
+            'fotos/playeras/optimized/azul marino.png',
+            'fotos/playeras/optimized/azul rey.png',
+            'fotos/playeras/optimized/gris.png',
+            'fotos/playeras/optimized/hueso.png',
+            'fotos/playeras/optimized/lila.png',
+            'fotos/playeras/optimized/rojo.png',
+            'fotos/playeras/optimized/verde militar.png',
+            'fotos/playeras/optimized/verde.png',
+            'fotos/playeras/optimized/vino.png'
+        ],
         gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
         description: 'Playera cómoda con el diseño auténtico de Legado San José.',
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
         variants: [
-            { name: 'Negra', color: '#000000' },
-            { name: 'Blanca', color: '#FFFFFF' },
-            { name: 'Azul', color: '#1e3a8a' },
-            { name: 'Gris', color: '#4b5563' },
-            { name: 'Roja', color: '#dc2626' }
+            { name: 'Blanca', color: '#FFFFFF', image: 'fotos/playeras/optimized/blanco.png' },
+            { name: 'Azul Cielo', color: '#87CEEB', image: 'fotos/playeras/optimized/azul cielo.png' },
+            { name: 'Azul Marino', color: '#000080', image: 'fotos/playeras/optimized/azul marino.png' },
+            { name: 'Azul Rey', color: '#4169E1', image: 'fotos/playeras/optimized/azul rey.png' },
+            { name: 'Gris', color: '#808080', image: 'fotos/playeras/optimized/gris.png' },
+            { name: 'Hueso', color: '#F5F5DC', image: 'fotos/playeras/optimized/hueso.png' },
+            { name: 'Lila', color: '#C8A2C8', image: 'fotos/playeras/optimized/lila.png' },
+            { name: 'Roja', color: '#DC143C', image: 'fotos/playeras/optimized/rojo.png' },
+            { name: 'Verde Militar', color: '#4B5320', image: 'fotos/playeras/optimized/verde militar.png' },
+            { name: 'Verde', color: '#008000', image: 'fotos/playeras/optimized/verde.png' },
+            { name: 'Vino', color: '#722F37', image: 'fotos/playeras/optimized/vino.png' }
         ]
     }
 ];
@@ -222,13 +240,15 @@ function openProductModal(productId) {
         variantGroup.style.display = 'block';
         const variantContainer = document.getElementById('variant-options'); // Need to add this to HTML
         variantContainer.innerHTML = product.variants.map((variant, index) => `
-            <button class="variant-btn ${index === 0 ? 'active' : ''}" 
-                    data-variant="${variant.name}" 
-                    style="background-color: ${variant.color};" 
-                    title="${variant.name}"
-                    onclick="selectVariant(this)">
-            </button>
-        `).join('');
+        variantContainer.innerHTML = product.variants.map((variant, index) => `
+            < button class= "variant-btn ${index === 0 ? 'active' : ''}" 
+                    data - variant="${variant.name}" 
+                    data - image="${variant.image || ''}"
+                    style = "background-color: ${variant.color};" 
+                    title = "${variant.name}"
+                    onclick = "selectVariant(this)" >
+            </button >
+            `).join('');
     } else {
         variantGroup.style.display = 'none';
     }
@@ -238,8 +258,8 @@ function openProductModal(productId) {
     if (product.sizes && product.sizes.length > 0) {
         sizeGroup.style.display = 'block';
         document.getElementById('size-buttons').innerHTML = product.sizes.map(size => `
-            <button class="size-btn" data-size="${size}">${size}</button>
-        `).join('');
+            < button class= "size-btn" data - size="${size}" > ${ size }</button >
+            `).join('');
 
         // Add size selection handlers
         document.querySelectorAll('.size-btn').forEach(btn => {
@@ -264,13 +284,22 @@ function openProductModal(productId) {
 function changeMainImage(src, thumb) {
     document.getElementById('main-product-image').src = src;
     document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
-    thumb.classList.add('active');
+    if (thumb) thumb.classList.add('active');
 }
 
 // Helper: Select Variant
 function selectVariant(btn) {
     document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+
+    // Change image if variant has one
+    const imageSrc = btn.dataset.image;
+    if (imageSrc) {
+        const mainImage = document.getElementById('main-product-image');
+        if (mainImage) {
+            mainImage.src = imageSrc;
+        }
+    }
 }
 
 // Close Product Modal
@@ -379,21 +408,21 @@ function updateCartUI() {
     if (cartItems && cartTotalElement) {
         if (cart.length === 0) {
             cartItems.innerHTML = `
-                <div class="empty-cart">
+        < div class= "empty-cart" >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="9" cy="21" r="1"></circle>
                         <circle cx="20" cy="21" r="1"></circle>
                         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
                     </svg>
                     <p>Tu carrito está vacío</p>
-                </div>
+                </div >
             `;
             cartTotalElement.innerHTML = '<span>Total:</span> <span>$0 MXN</span>';
             return;
         }
 
         cartItems.innerHTML = cart.map((item, index) => `
-            <div class="cart-item">
+            < div class= "cart-item" >
                 <div class="cart-item-image">
                     ${item.image
                 ? `<img src="${item.image}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">`
@@ -411,11 +440,11 @@ function updateCartUI() {
                     </div>
                 </div>
                 <button class="cart-item-remove" onclick="removeFromCart(${index})">&times;</button>
-            </div>
-        `).join('');
+            </div >
+            `).join('');
 
         const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        cartTotalElement.innerHTML = `<span>Total:</span> <span>$${total.toLocaleString('es-MX')} MXN</span>`;
+        cartTotalElement.innerHTML = `< span > Total:</span > <span>$${total.toLocaleString('es-MX')} MXN</span>`;
     }
 }
 
@@ -505,7 +534,7 @@ async function createStripeCheckoutSession() {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert(`Error: ${error.message}`);
+        alert(`Error: ${ error.message }`);
         throw error;
     }
 }
