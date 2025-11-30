@@ -48,34 +48,81 @@ const productsData = [
         price: 200,
         category: 'playeras',
         image: 'Fotos/playeras/optimized/blanco.png', // Default to White
-        images: [
+        images: [ // Default images (White)
             'Fotos/playeras/optimized/blanco.png',
-            'Fotos/playeras/optimized/azul cielo.png',
-            'Fotos/playeras/optimized/azul marino.png',
-            'Fotos/playeras/optimized/azul rey.png',
-            'Fotos/playeras/optimized/gris.png',
-            'Fotos/playeras/optimized/hueso.png',
-            'Fotos/playeras/optimized/lila.png',
-            'Fotos/playeras/optimized/rojo.png',
-            'Fotos/playeras/optimized/verde militar.png',
-            'Fotos/playeras/optimized/verde.png',
-            'Fotos/playeras/optimized/vino.png'
+            'Fotos/playeras/optimized/blanco.png',
+            'Fotos/playeras/optimized/blanco.png'
         ],
         gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
         description: 'Playera cómoda con el diseño auténtico de Legado San José.',
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
         variants: [
-            { name: 'Blanca', color: '#FFFFFF', image: 'Fotos/playeras/optimized/blanco.png' },
-            { name: 'Azul Cielo', color: '#87CEEB', image: 'Fotos/playeras/optimized/azul cielo.png' },
-            { name: 'Azul Marino', color: '#000080', image: 'Fotos/playeras/optimized/azul marino.png' },
-            { name: 'Azul Rey', color: '#4169E1', image: 'Fotos/playeras/optimized/azul rey.png' },
-            { name: 'Gris', color: '#808080', image: 'Fotos/playeras/optimized/gris.png' },
-            { name: 'Hueso', color: '#F5F5DC', image: 'Fotos/playeras/optimized/hueso.png' },
-            { name: 'Lila', color: '#C8A2C8', image: 'Fotos/playeras/optimized/lila.png' },
-            { name: 'Roja', color: '#DC143C', image: 'Fotos/playeras/optimized/rojo.png' },
-            { name: 'Verde Militar', color: '#4B5320', image: 'Fotos/playeras/optimized/verde militar.png' },
-            { name: 'Verde', color: '#008000', image: 'Fotos/playeras/optimized/verde.png' },
-            { name: 'Vino', color: '#722F37', image: 'Fotos/playeras/optimized/vino.png' }
+            {
+                name: 'Blanca',
+                color: '#FFFFFF',
+                image: 'Fotos/playeras/optimized/blanco.png',
+                images: ['Fotos/playeras/optimized/blanco.png', 'Fotos/playeras/optimized/blanco.png', 'Fotos/playeras/optimized/blanco.png']
+            },
+            {
+                name: 'Azul Cielo',
+                color: '#87CEEB',
+                image: 'Fotos/playeras/optimized/azul cielo.png',
+                images: ['Fotos/playeras/optimized/azul cielo.png', 'Fotos/playeras/optimized/azul cielo.png', 'Fotos/playeras/optimized/azul cielo.png']
+            },
+            {
+                name: 'Azul Marino',
+                color: '#000080',
+                image: 'Fotos/playeras/optimized/azul marino.png',
+                images: ['Fotos/playeras/optimized/azul marino.png', 'Fotos/playeras/optimized/azul marino.png', 'Fotos/playeras/optimized/azul marino.png']
+            },
+            {
+                name: 'Azul Rey',
+                color: '#4169E1',
+                image: 'Fotos/playeras/optimized/azul rey.png',
+                images: ['Fotos/playeras/optimized/azul rey.png', 'Fotos/playeras/optimized/azul rey.png', 'Fotos/playeras/optimized/azul rey.png']
+            },
+            {
+                name: 'Gris',
+                color: '#808080',
+                image: 'Fotos/playeras/optimized/gris.png',
+                images: ['Fotos/playeras/optimized/gris.png', 'Fotos/playeras/optimized/gris.png', 'Fotos/playeras/optimized/gris.png']
+            },
+            {
+                name: 'Hueso',
+                color: '#F5F5DC',
+                image: 'Fotos/playeras/optimized/hueso.png',
+                images: ['Fotos/playeras/optimized/hueso.png', 'Fotos/playeras/optimized/hueso.png', 'Fotos/playeras/optimized/hueso.png']
+            },
+            {
+                name: 'Lila',
+                color: '#C8A2C8',
+                image: 'Fotos/playeras/optimized/lila.png',
+                images: ['Fotos/playeras/optimized/lila.png', 'Fotos/playeras/optimized/lila.png', 'Fotos/playeras/optimized/lila.png']
+            },
+            {
+                name: 'Roja',
+                color: '#DC143C',
+                image: 'Fotos/playeras/optimized/rojo.png',
+                images: ['Fotos/playeras/optimized/rojo.png', 'Fotos/playeras/optimized/rojo.png', 'Fotos/playeras/optimized/rojo.png']
+            },
+            {
+                name: 'Verde Militar',
+                color: '#4B5320',
+                image: 'Fotos/playeras/optimized/verde militar.png',
+                images: ['Fotos/playeras/optimized/verde militar.png', 'Fotos/playeras/optimized/verde militar.png', 'Fotos/playeras/optimized/verde militar.png']
+            },
+            {
+                name: 'Verde',
+                color: '#008000',
+                image: 'Fotos/playeras/optimized/verde.png',
+                images: ['Fotos/playeras/optimized/verde.png', 'Fotos/playeras/optimized/verde.png', 'Fotos/playeras/optimized/verde.png']
+            },
+            {
+                name: 'Vino',
+                color: '#722F37',
+                image: 'Fotos/playeras/optimized/vino.png',
+                images: ['Fotos/playeras/optimized/vino.png', 'Fotos/playeras/optimized/vino.png', 'Fotos/playeras/optimized/vino.png']
+            }
         ]
     }
 ];
@@ -288,16 +335,35 @@ function changeMainImage(src, thumb) {
 
 // Helper: Select Variant
 function selectVariant(btn) {
+    // 1. Update UI state
     document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    // Change image if variant has one
-    const imageSrc = btn.dataset.image;
-    if (imageSrc) {
-        const mainImage = document.getElementById('main-product-image');
-        if (mainImage) {
-            mainImage.src = imageSrc;
-        }
+    // 2. Get Product and Variant Data
+    const modal = document.getElementById('product-modal');
+    const productId = parseInt(modal.dataset.productId);
+    const product = productsData.find(p => p.id === productId);
+    const variantName = btn.dataset.variant;
+
+    if (!product) return;
+
+    const variant = product.variants.find(v => v.name === variantName);
+    if (!variant) return;
+
+    // 3. Update Main Image
+    const mainImage = document.getElementById('main-product-image');
+    if (mainImage && variant.image) {
+        mainImage.src = variant.image;
+    }
+
+    // 4. Update Thumbnails
+    const thumbnailContainer = document.querySelector('.thumbnail-container');
+    if (thumbnailContainer && variant.images && variant.images.length > 0) {
+        thumbnailContainer.innerHTML = variant.images.map((img, index) => `
+            <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeMainImage('${img}', this)">
+                <img src="${img}" alt="${variant.name} ${index + 1}">
+            </div>
+        `).join('');
     }
 }
 
