@@ -6,8 +6,8 @@ const productsData = [
         name: 'Gorra Legado',
         price: 250,
         category: 'gorras',
-        image: 'Fotos/gorra1 frente.png', // Default image
-        images: ['Fotos/gorra1 frente.png', 'Fotos/gorra1 frente.png', 'Fotos/gorra1 frente.png'], // Placeholder for multiple angles
+        image: 'Fotos/optimized/gorra1 frente.png', // Default image
+        images: ['Fotos/optimized/gorra1 frente.png', 'Fotos/optimized/gorra1 frente.png', 'Fotos/optimized/gorra1 frente.png'], // Placeholder for multiple angles
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
         sizes: [], // No sizes
@@ -22,8 +22,8 @@ const productsData = [
         name: 'Mochila Legado',
         price: 3000,
         category: 'mochilas',
-        image: 'Fotos/Mochila.png',
-        images: ['Fotos/Mochila.png', 'Fotos/Mochila.png'],
+        image: 'Fotos/optimized/Mochila.png',
+        images: ['Fotos/optimized/Mochila.png', 'Fotos/optimized/Mochila.png'],
         gradient: 'linear-gradient(135deg, #64401B 0%, #EDE4CE 100%)',
         description: 'Mochila espaciosa y resistente, ideal para el día a día.',
         sizes: [], // No sizes
@@ -34,8 +34,8 @@ const productsData = [
         name: 'Maleta de Viaje',
         price: 4000,
         category: 'maletas',
-        image: 'Fotos/Maleta.png',
-        images: ['Fotos/Maleta.png', 'Fotos/Maleta.png'],
+        image: 'Fotos/optimized/Maleta.png',
+        images: ['Fotos/optimized/Maleta.png', 'Fotos/optimized/Maleta.png'],
         gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
         description: 'Maleta premium con gran capacidad y durabilidad.',
         sizes: [], // No sizes
