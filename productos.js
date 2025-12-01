@@ -619,3 +619,84 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 // Console branding
 console.log('%c Legado San José - Tienda ', 'background: #F5A84F; color: #fff; font-size: 20px; padding: 10px;');
+
+// Virtual Try-On Logic
+function openTryOn() {
+    document.getElementById('try-on-modal').style.display = 'flex';
+}
+
+function closeTryOn() {
+    document.getElementById('try-on-modal').style.display = 'none';
+    // Reset state
+    document.getElementById('user-photo-input').value = '';
+    document.getElementById('user-photo-preview').style.display = 'none';
+    document.getElementById('generate-btn').style.display = 'none';
+    document.getElementById('try-on-result').style.display = 'none';
+}
+
+function handlePhotoUpload(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const preview = document.getElementById('user-photo-preview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            document.getElementById('generate-btn').style.display = 'block';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function generateTryOn() {
+    const input = document.getElementById('user-photo-input');
+    if (!input.files[0]) return;
+
+    // Get current product image
+    const mainImage = document.getElementById('main-product-image');
+    // Get relative path by removing origin
+    const productImageUrl = mainImage.src.replace(window.location.origin + '/', '');
+
+    // Show loading
+    document.getElementById('generate-btn').style.display = 'none';
+    const resultDiv = document.getElementById('try-on-result');
+    const spinner = document.getElementById('loading-spinner');
+    const generatedImg = document.getElementById('generated-image');
+
+    resultDiv.style.display = 'block';
+    spinner.style.display = 'block';
+    generatedImg.style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('image', input.files[0]);
+    formData.append('productImage', productImageUrl);
+
+    try {
+        const response = await fetch('/api/try-on', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        // Display result
+        if (data.result && (data.result.startsWith('data:image') || data.result.length > 1000)) {
+            generatedImg.src = data.result.startsWith('data:') ? data.result : `data:image/png;base64,${data.result}`;
+            generatedImg.style.display = 'block';
+        } else {
+            // Fallback for text response or if image generation isn't direct
+            alert('AI Response: ' + data.result);
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Hubo un error al generar la imagen.');
+    } finally {
+        spinner.style.display = 'none';
+        document.getElementById('generate-btn').style.display = 'block';
+    }
+}
