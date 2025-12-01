@@ -73,7 +73,7 @@ const productsData = [
         image: 'Fotos/playeras/optimized/blanco.png', // Default to White
         gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
         description: 'Playera cómoda con el diseño auténtico de Legado San José.',
-        sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+        sizes: ['S', 'M', 'L'],
         variants: [
             {
                 name: 'Blanca',
