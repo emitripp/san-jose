@@ -621,11 +621,20 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 console.log('%c Legado San José - Tienda ', 'background: #F5A84F; color: #fff; font-size: 20px; padding: 10px;');
 
 // Virtual Try-On Logic
-// Virtual Try-On Logic
 function openTryOn() {
     // Switch views within the modal
     document.getElementById('product-details-view').style.display = 'none';
     document.getElementById('try-on-view').style.display = 'block';
+
+    // Reset result area to empty state
+    document.getElementById('try-on-result').classList.add('placeholder-state');
+    document.getElementById('empty-state-msg').style.display = 'block';
+    document.getElementById('loading-spinner').style.display = 'none';
+    document.getElementById('generated-image').style.display = 'none';
+
+    // Clear any previous errors
+    const errors = document.querySelectorAll('#try-on-result p.error-msg');
+    errors.forEach(e => e.remove());
 }
 
 function closeTryOn() {
@@ -637,7 +646,6 @@ function closeTryOn() {
     document.getElementById('user-photo-input').value = '';
     document.getElementById('user-photo-preview').style.display = 'none';
     document.getElementById('generate-btn').style.display = 'none';
-    document.getElementById('try-on-result').style.display = 'none';
 }
 
 function handlePhotoUpload(input) {
@@ -657,28 +665,36 @@ async function generateTryOn() {
     const input = document.getElementById('user-photo-input');
     if (!input.files[0]) return;
 
-    // Get current product image
     const mainImage = document.getElementById('main-product-image');
     // Get relative path by removing origin
     const productImageUrl = mainImage.src.replace(window.location.origin + '/', '');
 
-    // Show loading with status
-    document.getElementById('generate-btn').style.display = 'none';
-    const resultDiv = document.getElementById('try-on-result');
+    // UI Updates for Loading State
+    document.getElementById('generate-btn').style.display = 'none'; // Hide button to prevent double click
+
+    const resultContainer = document.getElementById('try-on-result');
+    const emptyState = document.getElementById('empty-state-msg');
     const spinner = document.getElementById('loading-spinner');
+    const loadingText = document.getElementById('loading-text');
     const generatedImg = document.getElementById('generated-image');
 
-    resultDiv.style.display = 'block';
-    spinner.style.display = 'block';
-    spinner.textContent = '✨ Conectando con IA...'; // Initial status
+    // Clear previous errors/results
+    const prevErrors = resultContainer.querySelectorAll('.error-msg, .text-result');
+    prevErrors.forEach(e => e.remove());
+
+    // Show Loading
+    resultContainer.classList.remove('placeholder-state'); // Remove dashed border if desired, or keep it
+    emptyState.style.display = 'none';
     generatedImg.style.display = 'none';
+    spinner.style.display = 'flex';
+    loadingText.textContent = '✨ Conectando con IA...';
 
     const formData = new FormData();
     formData.append('image', input.files[0]);
     formData.append('productImage', productImageUrl);
 
     try {
-        spinner.textContent = '✨ Generando tu look (esto puede tardar)...';
+        loadingText.textContent = '✨ Generando tu look (esto puede tardar)...';
 
         const response = await fetch('/api/try-on', {
             method: 'POST',
@@ -691,12 +707,11 @@ async function generateTryOn() {
             spinner.style.display = 'none';
             // Show error inline
             const errorMsg = document.createElement('p');
+            errorMsg.className = 'error-msg';
             errorMsg.style.color = 'red';
-            errorMsg.style.marginTop = '10px';
+            errorMsg.style.textAlign = 'center';
             errorMsg.textContent = '⚠️ ' + data.error;
-            resultDiv.appendChild(errorMsg);
-            // Remove error after a few seconds
-            setTimeout(() => errorMsg.remove(), 5000);
+            resultContainer.appendChild(errorMsg);
             return;
         }
 
@@ -706,23 +721,26 @@ async function generateTryOn() {
         if (data.result && (data.result.startsWith('data:image') || data.result.length > 1000)) {
             generatedImg.src = data.result.startsWith('data:') ? data.result : `data:image/png;base64,${data.result}`;
             generatedImg.style.display = 'block';
+            resultContainer.style.borderStyle = 'solid'; // Ensure solid border for result
         } else {
             // Fallback for text response
             const textResult = document.createElement('p');
+            textResult.className = 'text-result';
             textResult.textContent = 'IA: ' + data.result;
             textResult.style.padding = '10px';
             textResult.style.background = '#f0f0f0';
             textResult.style.borderRadius = '8px';
-            resultDiv.appendChild(textResult);
+            resultContainer.appendChild(textResult);
         }
 
     } catch (error) {
         console.error('Error:', error);
         spinner.style.display = 'none';
         const errorMsg = document.createElement('p');
+        errorMsg.className = 'error-msg';
         errorMsg.style.color = 'red';
         errorMsg.textContent = 'Error de conexión. Intenta de nuevo.';
-        resultDiv.appendChild(errorMsg);
+        resultContainer.appendChild(errorMsg);
     } finally {
         document.getElementById('generate-btn').style.display = 'block';
     }
