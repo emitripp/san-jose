@@ -7,7 +7,7 @@ const productsData = [
         price: 250,
         category: 'gorras',
         image: 'Fotos/optimized/gorra1 frente.png', // Default image
-        images: ['Fotos/optimized/gorra1 frente.png', 'Fotos/modelo gorra1.png', 'Fotos/modelo2 gorra1.png'], // Multiple angles
+        images: ['Fotos/optimized/gorra1 frente.png', 'Fotos/optimized/modelo gorra1.png', 'Fotos/optimized/modelo2 gorra1.png'], // Multiple angles
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
         sizes: [], // No sizes
@@ -16,6 +16,30 @@ const productsData = [
             { name: 'Café', color: '#64401B' },
             { name: 'Beige', color: '#EDE4CE' }
         ]
+    },
+    {
+        id: 5,
+        name: 'Gorra Edición 2',
+        price: 250,
+        category: 'gorras',
+        image: 'Fotos/optimized/gorra2.png',
+        images: ['Fotos/optimized/gorra2.png', 'Fotos/optimized/gorra2.png'],
+        gradient: 'linear-gradient(135deg, #333 0%, #999 100%)',
+        description: 'Nuevo diseño de gorra Legado San José.',
+        sizes: [],
+        variants: []
+    },
+    {
+        id: 6,
+        name: 'Gorra Edición 3',
+        price: 250,
+        category: 'gorras',
+        image: 'Fotos/optimized/gorra3.png',
+        images: ['Fotos/optimized/gorra3.png', 'Fotos/optimized/gorra3.png'],
+        gradient: 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 100%)',
+        description: 'Estilo exclusivo para completar tu outfit.',
+        sizes: [],
+        variants: []
     },
     {
         id: 2,
@@ -97,6 +121,12 @@ const productsData = [
                 color: '#C8A2C8',
                 image: 'Fotos/playeras/optimized/lila.png',
                 images: ['Fotos/playeras/optimized/lila.png', 'Fotos/playeras/optimized/lila.png', 'Fotos/playeras/optimized/lila.png']
+            },
+            {
+                name: 'Rosa',
+                color: '#FFC0CB',
+                image: 'Fotos/playeras/optimized/rosa.png',
+                images: ['Fotos/playeras/optimized/rosa.png', 'Fotos/playeras/optimized/rosa.png', 'Fotos/playeras/optimized/rosa.png']
             },
             {
                 name: 'Roja',

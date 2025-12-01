@@ -12,7 +12,11 @@ if not os.path.exists(output_dir):
 accessories = [
     "gorra1 frente.png",
     "Mochila.png",
-    "Maleta.png"
+    "Maleta.png",
+    "gorra2.png",
+    "gorra3.png",
+    "modelo gorra1.png",
+    "modelo2 gorra1.png"
 ]
 
 for file in accessories:
