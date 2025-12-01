@@ -694,202 +694,196 @@
 }
 
 @keyframes spin {
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* Responsive */
-    /* Gallery Styles (Global) */
-    .main-image-container {
-        width: 100%;
-        height: 500px;
-        /* Default for desktop */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        background: #fff;
-        /* Changed from var(--gray-light) to #fff */
-        border-radius: 8px;
-    }
-
-    .main-image-container img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-    }
-
-    .thumbnail-container {
-        display: flex;
-        gap: 10px;
-        padding: 15px 0;
-        flex-wrap: wrap;
-        /* Allow wrapping to multiple rows */
-        justify-content: center;
-        /* Center thumbnails */
-        width: 100%;
-    }
-
-    .thumbnail {
-        width: 70px;
-        height: 70px;
-        border: 2px solid transparent;
-        cursor: pointer;
-        opacity: 0.6;
-        transition: all 0.3s ease;
-        border-radius: 4px;
-        overflow: hidden;
-        flex-shrink: 0;
-    }
-
-    .thumbnail.active {
-        border-color: var(--primary);
-        opacity: 1;
-    }
-
-    .thumbnail img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    /* Variant Styles (Global) */
-    .variant-options {
-        display: flex;
-        gap: 15px;
-        flex-wrap: wrap;
-    }
-
-    .variant-btn {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        border: 2px solid var(--gray-light);
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-    }
-
-    .variant-btn:hover {
-        transform: scale(1.1);
-    }
-
-    .variant-btn.active {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--primary);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .cart-sidebar {
-            width: 100%;
-            right: -100%;
-        }
-
-        /* Mobile Modal Adjustments */
-        .modal-content {
-            z-index: 3001;
-            max-height: 100vh;
-            height: 100vh;
-            width: 100vw;
-            /* Ensure it doesn't exceed viewport */
-            max-width: 100%;
-            border-radius: 0;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-            /* Prevent horizontal scroll */
-        }
-
-        .modal-body {
-            grid-template-columns: 1fr;
-            /* Force vertical stacking */
-            overflow-y: auto;
-            overflow-x: hidden;
-            /* Prevent horizontal scroll */
-            padding-bottom: 80px;
-            /* Space for bottom actions */
-            width: 100%;
-        }
-
-        .modal-image {
-            min-height: auto;
-            display: block;
-            background: transparent;
-            padding: 0;
-            width: 100%;
-        }
-
-        .main-image-container {
-            height: 50vh;
-            /* Limit height on mobile to half screen */
-            border-radius: 0;
-            background: #fff;
-            /* Changed from #f5f5f5 to #fff */
-            width: 100%;
-        }
-
-        .main-image-container img {
-            padding: 20px;
-            /* Add padding to make image look smaller/contained */
-        }
-
-        .thumbnail-container {
-            justify-content: flex-start;
-            /* Align left on mobile */
-            padding: 10px 20px;
-        }
-
-        .modal-details {
-            padding: 20px;
-            padding-top: 10px;
-        }
-
-        .modal-close {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: rgba(255, 255, 255, 0.9);
-            z-index: 3002;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            width: 35px;
-            height: 35px;
-        }
-
-        .add-to-cart-btn {
-            position: relative;
-            z-index: 10;
-            width: 100%;
-        }
-
-        .shop-header {
-            padding: 120px 0 60px;
-        }
-    }
-
-    /* Loading State */
-    .loading {
-        text-align: center;
-        padding: 60px 20px;
-        color: var(--gray-mid);
-    }
-
-    .loading::after {
-        content: '';
-        display: inline-block;
-        width: 40px;
-        height: 40px;
-        border: 4px solid var(--gray-light);
-        border-top-color: var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Responsive */
+/* Gallery Styles (Global) */
+.main-image-container {
+    width: 100%;
+    height: 500px;
+    /* Default for desktop */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #fff;
+    /* Changed from var(--gray-light) to #fff */
+    border-radius: 8px;
+}
+
+.main-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.thumbnail-container {
+    display: flex;
+    gap: 10px;
+    padding: 15px 0;
+    flex-wrap: wrap;
+    /* Allow wrapping to multiple rows */
+    justify-content: center;
+    /* Center thumbnails */
+    width: 100%;
+}
+
+.thumbnail {
+    width: 70px;
+    height: 70px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.thumbnail.active {
+    border-color: var(--primary);
+    opacity: 1;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Variant Styles (Global) */
+.variant-options {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.variant-btn {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid var(--gray-light);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.variant-btn:hover {
+    transform: scale(1.1);
+}
+
+.variant-btn.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--primary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cart-sidebar {
+        width: 100%;
+        right: -100%;
+    }
+
+    /* Mobile Modal Adjustments */
+    .modal-content {
+        z-index: 3001;
+        max-height: 100vh;
+        height: 100vh;
+        width: 100vw;
+        /* Ensure it doesn't exceed viewport */
+        max-width: 100%;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+        /* Prevent horizontal scroll */
+    }
+
+    .modal-body {
+        grid-template-columns: 1fr;
+        /* Force vertical stacking */
+        overflow-y: auto;
+        overflow-x: hidden;
+        /* Prevent horizontal scroll */
+        padding-bottom: 80px;
+        /* Space for bottom actions */
+        width: 100%;
+    }
+
+    .modal-image {
+        min-height: auto;
+        display: block;
+        background: transparent;
+        padding: 0;
+        width: 100%;
+    }
+
+    .main-image-container {
+        height: 50vh;
+        /* Limit height on mobile to half screen */
+        border-radius: 0;
+        background: #fff;
+        /* Changed from #f5f5f5 to #fff */
+        width: 100%;
+    }
+
+    .main-image-container img {
+        padding: 20px;
+        /* Add padding to make image look smaller/contained */
+    }
+
+    .thumbnail-container {
+        justify-content: flex-start;
+        /* Align left on mobile */
+        padding: 10px 20px;
+    }
+
+    .modal-details {
+        padding: 20px;
+        padding-top: 10px;
+    }
+
+    .modal-close {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.9);
+        z-index: 3002;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        width: 35px;
+        height: 35px;
+    }
+
+    .add-to-cart-btn {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+    }
+
+    .shop-header {
+        padding: 120px 0 60px;
+    }
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray-mid);
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--gray-light);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 @media (max-width: 768px) {
