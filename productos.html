@@ -144,63 +144,84 @@
                                     <button class="add-to-cart-btn" onclick="addToCart()">
                                         Agregar al Carrito
                                     </button>
-                                    onchange="handlePhotoUpload(this)">
-                                    <img id="user-photo-preview" src=""
-                                        style="max-width: 100%; max-height: 200px; display: none; margin: 10px auto; border-radius: 8px;">
-                                </div>
-
-                                <button id="generate-btn" class="cta-button" onclick="generateTryOn()"
-                                    style="width: 100%; display: none;">
-                                    Generar Imagen
-                                </button>
-
-                                <div id="try-on-result" style="margin-top: 20px; display: none;">
-                                    <h3>Resultado:</h3>
-                                    <div id="loading-spinner" style="display: none;">✨ Generando magia...</div>
-                                    <img id="generated-image" src=""
-                                        style="width: 100%; border-radius: 8px; margin-top: 10px;">
+                                    <button class="try-on-btn" onclick="openTryOn()">
+                                        <span class="icon">✨</span> Prueba cómo se te ve
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <!-- Footer -->
-                        <footer class="footer" id="contacto">
-                            <div class="container">
-                                <div class="footer-grid">
-                                    <div class="footer-column">
-                                        <h3>LEGADO SAN JOSÉ</h3>
-                                        <p>Tradición que se viste</p>
-                                    </div>
-                                    <div class="footer-column">
-                                        <h4>Compra</h4>
-                                        <ul>
-                                            <li><a href="productos.html">Productos</a></li>
-                                            <li><a href="#">Tallas</a></li>
-                                            <li><a href="#">Envíos</a></li>
-                                            <li><a href="#">Devoluciones</a></li>
-                                            <li><a href="index.html#contacto">Contacto</a></li>
-                                        </ul>
-                                    </div>
-                                    <div class="footer-column">
-                                        <h4>Síguenos</h4>
-                                        <div class="social-links">
-                                            <a href="#">Instagram</a>
-                                            <a href="#">Facebook</a>
-                                            <a href="#">TikTok</a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="footer-bottom">
-                                    <p>&copy; 2025 Legado San José. Todos los derechos reservados.</p>
-                                </div>
-                            </div>
-                        </footer>
+    <!-- Try-On Modal -->
+    <div id="try-on-modal" class="modal">
+        <div class="modal-content try-on-content">
+            <span class="close-modal" onclick="closeTryOn()">&times;</span>
+            <h2>Prueba cómo se te ve</h2>
+            <p class="subtitle">Sube una foto tuya y la IA hará el resto.</p>
 
-                        <!-- Stripe.js -->
-                        <script src="https://js.stripe.com/v3/"></script>
-                        <script src="stripe-config.js"></script>
-                        <script src="script.js"></script>
-                        <script src="productos.js"></script>
+            <div class="upload-area" onclick="document.getElementById('user-photo-input').click()">
+                <div class="upload-placeholder">
+                    <span class="camera-icon">📸</span>
+                    <p>Toca para subir tu foto</p>
+                </div>
+                <input type="file" id="user-photo-input" accept="image/*" style="display: none;"
+                    onchange="handlePhotoUpload(this)">
+                <img id="user-photo-preview" src="" class="preview-image">
+            </div>
+
+            <button id="generate-btn" class="cta-button generate-btn" onclick="generateTryOn()" style="display: none;">
+                Generar Imagen
+            </button>
+
+            <div id="try-on-result" class="result-container" style="display: none;">
+                <div id="loading-spinner" class="spinner" style="display: none;">✨ Creando tu look...</div>
+                <img id="generated-image" src="" class="generated-image">
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" id="contacto">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h3>LEGADO SAN JOSÉ</h3>
+                    <p>Tradición que se viste</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Compra</h4>
+                    <ul>
+                        <li><a href="productos.html">Productos</a></li>
+                        <li><a href="#">Tallas</a></li>
+                        <li><a href="#">Envíos</a></li>
+                        <li><a href="#">Devoluciones</a></li>
+                        <li><a href="index.html#contacto">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Síguenos</h4>
+                    <div class="social-links">
+                        <a href="#">Instagram</a>
+                        <a href="#">Facebook</a>
+                        <a href="#">TikTok</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Legado San José. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="stripe-config.js"></script>
+    <script src="script.js"></script>
+    <script src="productos.js"></script>
 </body>
 
 </html>
