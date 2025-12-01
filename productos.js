@@ -19,25 +19,25 @@ const productsData = [
     },
     {
         id: 5,
-        name: 'Gorra Edición 2',
+        name: 'Gorra Legado Ámbar',
         price: 250,
         category: 'gorras',
         image: 'Fotos/optimized/gorra2.png',
         images: ['Fotos/optimized/gorra2.png', 'Fotos/optimized/gorra2.png'],
-        gradient: 'linear-gradient(135deg, #333 0%, #999 100%)',
-        description: 'Nuevo diseño de gorra Legado San José.',
+        gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)', // Adjusted gradient to match yellow/amber
+        description: 'Nuevo diseño con malla transpirable en tono ámbar.',
         sizes: [],
         variants: []
     },
     {
         id: 6,
-        name: 'Gorra Edición 3',
+        name: 'Gorra Legado Verde',
         price: 250,
         category: 'gorras',
         image: 'Fotos/optimized/gorra3.png',
         images: ['Fotos/optimized/gorra3.png', 'Fotos/optimized/gorra3.png'],
-        gradient: 'linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 100%)',
-        description: 'Estilo exclusivo para completar tu outfit.',
+        gradient: 'linear-gradient(135deg, #2E8B57 0%, #000 100%)', // Adjusted gradient to match green
+        description: 'Estilo exclusivo en verde bosque para completar tu outfit.',
         sizes: [],
         variants: []
     },
