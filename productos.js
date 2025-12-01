@@ -745,3 +745,32 @@ async function generateTryOn() {
         document.getElementById('generate-btn').style.display = 'block';
     }
 }
+
+// Preload Images for Instant UX
+function preloadImages() {
+    console.log('Preloading images...');
+    const allImages = new Set();
+
+    productsData.forEach(product => {
+        // Main product images
+        if (product.image) allImages.add(product.image);
+        if (product.images) product.images.forEach(img => allImages.add(img));
+
+        // Variant images
+        if (product.variants) {
+            product.variants.forEach(variant => {
+                if (variant.image) allImages.add(variant.image);
+                if (variant.images) variant.images.forEach(img => allImages.add(img));
+            });
+        }
+    });
+
+    allImages.forEach(url => {
+        const img = new Image();
+        img.src = url;
+    });
+    console.log(`Preloaded ${allImages.size} images.`);
+}
+
+// Start preloading when page loads
+document.addEventListener('DOMContentLoaded', preloadImages);
