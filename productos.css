@@ -889,12 +889,24 @@
 @media (max-width: 768px) {
     .cart-sidebar {
         width: 100%;
+        height: 100dvh;
+        /* Dynamic viewport height for mobile */
         right: -100%;
         overscroll-behavior: contain;
-        /* Prevent body scroll chaining */
+        display: flex;
+        flex-direction: column;
     }
 
     .cart-sidebar.open {
         right: 0;
+    }
+
+    .cart-items {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Smooth scroll on iOS */
+        padding-bottom: 100px;
+        /* Ensure space for footer */
     }
 }
