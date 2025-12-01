@@ -781,4 +781,8 @@ function preloadImages() {
 }
 
 // Start preloading when page loads
-document.addEventListener('DOMContentLoaded', preloadImages);
+// Start preloading when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    preloadImages();
+    initProductModal(); // Initialize modal logic
+});
