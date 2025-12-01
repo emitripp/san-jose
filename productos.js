@@ -23,7 +23,7 @@ const productsData = [
         price: 250,
         category: 'gorras',
         image: 'Fotos/optimized/gorra2.png',
-        images: ['Fotos/optimized/gorra2.png', 'Fotos/optimized/gorra2.png'],
+        images: ['Fotos/optimized/gorra2.png', 'Fotos/optimized/modelo1 gorra ambar.png', 'Fotos/optimized/modelo2 gorra ambar.png'],
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)', // Adjusted gradient to match yellow/amber
         description: 'Nuevo diseño con malla transpirable en tono ámbar.',
         sizes: [],
@@ -35,7 +35,7 @@ const productsData = [
         price: 250,
         category: 'gorras',
         image: 'Fotos/optimized/gorra3.png',
-        images: ['Fotos/optimized/gorra3.png', 'Fotos/optimized/gorra3.png'],
+        images: ['Fotos/optimized/gorra3.png', 'Fotos/optimized/modelo1 gorra verde.png', 'Fotos/optimized/modelo2 gorra verde.png'],
         gradient: 'linear-gradient(135deg, #2E8B57 0%, #000 100%)', // Adjusted gradient to match green
         description: 'Estilo exclusivo en verde bosque para completar tu outfit.',
         sizes: [],

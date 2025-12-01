@@ -21,7 +21,11 @@ accessories = [
     "maleta modelo1.png",
     "maleta modelo2.png",
     "modelo mochila1.png",
-    "modelo mochila2.png"
+    "modelo mochila2.png",
+    "modelo1 gorra ambar.png",
+    "modelo2 gorra ambar.png",
+    "modelo1 gorra verde.png",
+    "modelo2 gorra verde.png"
 ]
 
 for file in accessories:
