@@ -113,7 +113,15 @@ app.post('/api/try-on', upload.single('image'), async (req, res) => {
 
     } catch (error) {
         console.error('Error generating try-on:', error);
-        res.status(500).json({ error: 'Failed to generate image', details: error.message });
+
+        let errorMessage = 'Failed to generate image';
+        if (error.status === 429) {
+            errorMessage = 'El servidor de IA está saturado (Límite de cuota). Por favor espera 1 minuto e intenta de nuevo.';
+        } else if (error.message && error.message.includes('SAFETY')) {
+            errorMessage = 'La imagen no pudo ser generada por motivos de seguridad/contenido.';
+        }
+
+        res.status(500).json({ error: errorMessage, details: error.message });
     }
 });
 

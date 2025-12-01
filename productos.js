@@ -685,7 +685,7 @@ async function generateTryOn() {
         const data = await response.json();
 
         if (data.error) {
-            alert('Error: ' + data.error);
+            alert('⚠️ ' + data.error);
             return;
         }
 
@@ -700,7 +700,7 @@ async function generateTryOn() {
 
     } catch (error) {
         console.error('Error:', error);
-        alert('Hubo un error al generar la imagen.');
+        alert('Hubo un error de conexión. Intenta de nuevo.');
     } finally {
         spinner.style.display = 'none';
         document.getElementById('generate-btn').style.display = 'block';
