@@ -16,7 +16,8 @@ accessories = [
     "gorra2.png",
     "gorra3.png",
     "modelo gorra1.png",
-    "modelo2 gorra1.png"
+    "modelo2 gorra1.png",
+    "bolsas.png"
 ]
 
 for file in accessories:
