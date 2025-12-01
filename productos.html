@@ -140,86 +140,67 @@
                                     <input type="number" id="quantity" value="1" min="1">
                                     <button class="qty-btn plus">+</button>
                                 </div>
-                                <button class="add-to-cart-btn" onclick="addToCart()">
-                                    Agregar al Carrito
+                                <div class="action-buttons">
+                                    <button class="add-to-cart-btn" onclick="addToCart()">
+                                        Agregar al Carrito
+                                    </button>
+                                    onchange="handlePhotoUpload(this)">
+                                    <img id="user-photo-preview" src=""
+                                        style="max-width: 100%; max-height: 200px; display: none; margin: 10px auto; border-radius: 8px;">
+                                </div>
+
+                                <button id="generate-btn" class="cta-button" onclick="generateTryOn()"
+                                    style="width: 100%; display: none;">
+                                    Generar Imagen
                                 </button>
-                                <button class="try-on-btn" onclick="openTryOn()"
-                                    style="background: linear-gradient(45deg, #FFD700, #FFA500); color: #000; margin-left: 10px;">
-                                    ✨ Probador Virtual
-                                </button>
+
+                                <div id="try-on-result" style="margin-top: 20px; display: none;">
+                                    <h3>Resultado:</h3>
+                                    <div id="loading-spinner" style="display: none;">✨ Generando magia...</div>
+                                    <img id="generated-image" src=""
+                                        style="width: 100%; border-radius: 8px; margin-top: 10px;">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Try-On Modal -->
-            <div id="try-on-modal" class="modal">
-                <div class="modal-content" style="max-width: 500px; text-align: center;">
-                    <span class="close-modal" onclick="closeTryOn()">&times;</span>
-                    <h2>Probador Virtual IA</h2>
-                    <p>Sube una foto tuya y mira cómo te queda.</p>
-
-                    <div class="upload-area" onclick="document.getElementById('user-photo-input').click()"
-                        style="border: 2px dashed #ccc; padding: 20px; margin: 20px 0; cursor: pointer; border-radius: 8px;">
-                        <p>📸 Toca para subir tu foto</p>
-                        <input type="file" id="user-photo-input" accept="image/*" style="display: none;"
-                            onchange="handlePhotoUpload(this)">
-                        <img id="user-photo-preview" src=""
-                            style="max-width: 100%; max-height: 200px; display: none; margin: 10px auto; border-radius: 8px;">
-                    </div>
-
-                    <button id="generate-btn" class="cta-button" onclick="generateTryOn()"
-                        style="width: 100%; display: none;">
-                        Generar Imagen
-                    </button>
-
-                    <div id="try-on-result" style="margin-top: 20px; display: none;">
-                        <h3>Resultado:</h3>
-                        <div id="loading-spinner" style="display: none;">✨ Generando magia...</div>
-                        <img id="generated-image" src="" style="width: 100%; border-radius: 8px; margin-top: 10px;">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <footer class="footer" id="contacto">
-                <div class="container">
-                    <div class="footer-grid">
-                        <div class="footer-column">
-                            <h3>LEGADO SAN JOSÉ</h3>
-                            <p>Tradición que se viste</p>
-                        </div>
-                        <div class="footer-column">
-                            <h4>Compra</h4>
-                            <ul>
-                                <li><a href="productos.html">Productos</a></li>
-                                <li><a href="#">Tallas</a></li>
-                                <li><a href="#">Envíos</a></li>
-                                <li><a href="#">Devoluciones</a></li>
-                                <li><a href="index.html#contacto">Contacto</a></li>
-                            </ul>
-                        </div>
-                        <div class="footer-column">
-                            <h4>Síguenos</h4>
-                            <div class="social-links">
-                                <a href="#">Instagram</a>
-                                <a href="#">Facebook</a>
-                                <a href="#">TikTok</a>
+                        <!-- Footer -->
+                        <footer class="footer" id="contacto">
+                            <div class="container">
+                                <div class="footer-grid">
+                                    <div class="footer-column">
+                                        <h3>LEGADO SAN JOSÉ</h3>
+                                        <p>Tradición que se viste</p>
+                                    </div>
+                                    <div class="footer-column">
+                                        <h4>Compra</h4>
+                                        <ul>
+                                            <li><a href="productos.html">Productos</a></li>
+                                            <li><a href="#">Tallas</a></li>
+                                            <li><a href="#">Envíos</a></li>
+                                            <li><a href="#">Devoluciones</a></li>
+                                            <li><a href="index.html#contacto">Contacto</a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="footer-column">
+                                        <h4>Síguenos</h4>
+                                        <div class="social-links">
+                                            <a href="#">Instagram</a>
+                                            <a href="#">Facebook</a>
+                                            <a href="#">TikTok</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="footer-bottom">
+                                    <p>&copy; 2025 Legado San José. Todos los derechos reservados.</p>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="footer-bottom">
-                        <p>&copy; 2025 Legado San José. Todos los derechos reservados.</p>
-                    </div>
-                </div>
-            </footer>
+                        </footer>
 
-            <!-- Stripe.js -->
-            <script src="https://js.stripe.com/v3/"></script>
-            <script src="stripe-config.js"></script>
-            <script src="script.js"></script>
-            <script src="productos.js"></script>
+                        <!-- Stripe.js -->
+                        <script src="https://js.stripe.com/v3/"></script>
+                        <script src="stripe-config.js"></script>
+                        <script src="script.js"></script>
+                        <script src="productos.js"></script>
 </body>
 
 </html>
