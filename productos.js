@@ -47,7 +47,7 @@ const productsData = [
         price: 3000,
         category: 'mochilas',
         image: 'Fotos/optimized/Mochila.png',
-        images: ['Fotos/optimized/Mochila.png', 'Fotos/optimized/Mochila.png'],
+        images: ['Fotos/optimized/Mochila.png', 'Fotos/optimized/modelo mochila1.png', 'Fotos/optimized/modelo mochila2.png'],
         gradient: 'linear-gradient(135deg, #64401B 0%, #EDE4CE 100%)',
         description: 'Mochila espaciosa y resistente, ideal para el día a día.',
         sizes: [], // No sizes
@@ -59,7 +59,7 @@ const productsData = [
         price: 4000,
         category: 'maletas',
         image: 'Fotos/optimized/Maleta.png',
-        images: ['Fotos/optimized/Maleta.png', 'Fotos/optimized/Maleta.png'],
+        images: ['Fotos/optimized/Maleta.png', 'Fotos/optimized/maleta modelo1.png', 'Fotos/optimized/maleta modelo2.png'],
         gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
         description: 'Maleta premium con gran capacidad y durabilidad.',
         sizes: [], // No sizes
