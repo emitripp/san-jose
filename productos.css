@@ -509,12 +509,15 @@
 
 .action-buttons {
     display: flex;
+    flex-direction: column;
+    /* Stack buttons vertically */
     gap: 15px;
     width: 100%;
 }
 
 .add-to-cart-btn {
-    flex: 1;
+    width: 100%;
+    /* Full width */
     padding: 15px;
     background: var(--brown);
     color: var(--white);
@@ -530,7 +533,8 @@
 }
 
 .try-on-btn {
-    flex: 1;
+    width: 100%;
+    /* Full width */
     padding: 15px;
     background: transparent;
     color: var(--brown);

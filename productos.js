@@ -621,12 +621,18 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 console.log('%c Legado San José - Tienda ', 'background: #F5A84F; color: #fff; font-size: 20px; padding: 10px;');
 
 // Virtual Try-On Logic
+// Virtual Try-On Logic
 function openTryOn() {
-    document.getElementById('try-on-modal').style.display = 'flex';
+    // Switch views within the modal
+    document.getElementById('product-details-view').style.display = 'none';
+    document.getElementById('try-on-view').style.display = 'block';
 }
 
 function closeTryOn() {
-    document.getElementById('try-on-modal').style.display = 'none';
+    // Return to product details view
+    document.getElementById('try-on-view').style.display = 'none';
+    document.getElementById('product-details-view').style.display = 'grid'; // Restore grid layout
+
     // Reset state
     document.getElementById('user-photo-input').value = '';
     document.getElementById('user-photo-preview').style.display = 'none';

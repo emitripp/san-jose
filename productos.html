@@ -111,7 +111,9 @@
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </button>
-            <div class="modal-body">
+
+            <!-- Product Details View -->
+            <div class="modal-body" id="product-details-view">
                 <div class="modal-image" id="modal-image"></div>
                 <div class="modal-details">
                     <h2 id="modal-name"></h2>
@@ -153,33 +155,36 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Try-On Modal -->
-    <div id="try-on-modal" class="modal">
-        <div class="modal-content try-on-content">
-            <span class="close-modal" onclick="closeTryOn()">&times;</span>
-            <h2>Prueba cómo se te ve</h2>
-            <p class="subtitle">Sube una foto tuya y la IA hará el resto.</p>
+            <!-- Try-On View (Hidden by default) -->
+            <div id="try-on-view" class="try-on-content"
+                style="display: none; width: 100%; padding: 40px; box-sizing: border-box;">
+                <button onclick="closeTryOn()"
+                    style="background: none; border: none; cursor: pointer; font-size: 16px; color: var(--gray-mid); margin-bottom: 20px; display: flex; align-items: center; gap: 5px;">
+                    ← Volver al producto
+                </button>
+                <h2>Prueba cómo se te ve</h2>
+                <p class="subtitle">Sube una foto tuya y la IA hará el resto.</p>
 
-            <div class="upload-area" onclick="document.getElementById('user-photo-input').click()">
-                <div class="upload-placeholder">
-                    <span class="camera-icon">📸</span>
-                    <p>Toca para subir tu foto</p>
+                <div class="upload-area" onclick="document.getElementById('user-photo-input').click()">
+                    <div class="upload-placeholder">
+                        <span class="camera-icon">📸</span>
+                        <p>Toca para subir tu foto</p>
+                    </div>
+                    <input type="file" id="user-photo-input" accept="image/*" style="display: none;"
+                        onchange="handlePhotoUpload(this)">
+                    <img id="user-photo-preview" src="" class="preview-image">
                 </div>
-                <input type="file" id="user-photo-input" accept="image/*" style="display: none;"
-                    onchange="handlePhotoUpload(this)">
-                <img id="user-photo-preview" src="" class="preview-image">
-            </div>
 
-            <button id="generate-btn" class="cta-button generate-btn" onclick="generateTryOn()" style="display: none;">
-                Generar Imagen
-            </button>
+                <button id="generate-btn" class="cta-button generate-btn" onclick="generateTryOn()"
+                    style="display: none;">
+                    Generar Imagen
+                </button>
 
-            <div id="try-on-result" class="result-container" style="display: none;">
-                <div id="loading-spinner" class="spinner" style="display: none;">✨ Creando tu look...</div>
-                <img id="generated-image" src="" class="generated-image">
+                <div id="try-on-result" class="result-container" style="display: none;">
+                    <div id="loading-spinner" class="spinner" style="display: none;">✨ Creando tu look...</div>
+                    <img id="generated-image" src="" class="generated-image">
+                </div>
             </div>
         </div>
     </div>
