@@ -240,6 +240,9 @@ app.post('/create-checkout-session', async (req, res) => {
             shipping_address_collection: {
                 allowed_countries: ['MX'], // Solo México
             },
+            phone_number_collection: {
+                enabled: true,
+            },
             shipping_options: shippingOptions,
             metadata: {
                 items: JSON.stringify(items)
@@ -250,6 +253,65 @@ app.post('/create-checkout-session', async (req, res) => {
     } catch (error) {
         console.error('Error creating checkout session:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// Newsletter Subscription Endpoint
+app.post('/api/subscribe', (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const filePath = path.join(__dirname, 'subscribers.txt');
+    const date = new Date().toLocaleString('es-MX');
+    const entry = `${date} - ${email}\n`;
+
+    fs.appendFile(filePath, entry, (err) => {
+        if (err) {
+            console.error('Error saving subscription:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.json({ message: 'Subscribed successfully' });
+    });
+});
+
+// Admin View for Subscribers (Simple Password Protection)
+app.get('/admin/subscribers', (req, res) => {
+    const { pwd } = req.query;
+    if (pwd !== 'legadoadmin') { // Simple password
+        return res.status(403).send('<h1>Acceso Denegado</h1><p>Contraseña incorrecta.</p>');
+    }
+
+    const filePath = path.join(__dirname, 'subscribers.txt');
+    if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const lines = content.split('\n').filter(line => line.trim() !== '');
+
+        let html = `
+            <html>
+            <head>
+                <title>Admin - Suscriptores</title>
+                <style>
+                    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+                    h1 { color: #333; }
+                    ul { list-style: none; padding: 0; }
+                    li { background: #f4f4f4; margin: 5px 0; padding: 10px; border-radius: 4px; border-left: 4px solid #F5A84F; }
+                    .count { font-weight: bold; color: #666; }
+                </style>
+            </head>
+            <body>
+                <h1>Lista de Suscriptores</h1>
+                <p class="count">Total: ${lines.length}</p>
+                <ul>
+                    ${lines.map(line => `<li>${line}</li>`).join('')}
+                </ul>
+            </body>
+            </html>
+        `;
+        res.send(html);
+    } else {
+        res.send('<h1>No hay suscriptores aún.</h1>');
     }
 });
 
