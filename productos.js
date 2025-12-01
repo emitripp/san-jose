@@ -197,6 +197,7 @@ function setupEventListeners() {
     if (cartToggle) {
         cartToggle.addEventListener('click', () => {
             document.getElementById('cart-sidebar').classList.add('open');
+            document.body.classList.add('no-scroll');
         });
     }
 
@@ -204,6 +205,7 @@ function setupEventListeners() {
     if (cartClose) {
         cartClose.addEventListener('click', () => {
             document.getElementById('cart-sidebar').classList.remove('open');
+            document.body.classList.remove('no-scroll');
         });
     }
 
@@ -453,6 +455,7 @@ function addToCartFromModal() {
 
         // Open cart sidebar
         document.getElementById('cart-sidebar').classList.add('open');
+        document.body.classList.add('no-scroll');
 
     } catch (error) {
         console.error('Error adding to cart:', error);
