@@ -123,12 +123,6 @@ const productsData = [
                 images: ['Fotos/playeras/optimized/lila.png', 'Fotos/playeras/optimized/lila.png', 'Fotos/playeras/optimized/lila.png']
             },
             {
-                name: 'Rosa',
-                color: '#FFC0CB',
-                image: 'Fotos/playeras/optimized/rosa.png',
-                images: ['Fotos/playeras/optimized/rosa.png', 'Fotos/playeras/optimized/rosa.png', 'Fotos/playeras/optimized/rosa.png']
-            },
-            {
                 name: 'Roja',
                 color: '#DC143C',
                 image: 'Fotos/playeras/optimized/rojo.png',
