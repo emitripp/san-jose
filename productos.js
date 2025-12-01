@@ -11,11 +11,7 @@ const productsData = [
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
         sizes: [], // No sizes
-        variants: [
-            { name: 'Negra', color: '#000000' },
-            { name: 'Café', color: '#64401B' },
-            { name: 'Beige', color: '#EDE4CE' }
-        ]
+        variants: []
     },
     {
         id: 5,
@@ -512,11 +508,11 @@ function updateCartUI() {
                     </div>
                 </div>
                 <button class="cart-item-remove" onclick="removeFromCart(${index})">&times;</button>
-            </div >
+            </div>
             `).join('');
 
         const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        cartTotalElement.innerHTML = `< span > Total:</span > <span>$${total.toLocaleString('es-MX')} MXN</span>`;
+        cartTotalElement.innerHTML = `<span>Total:</span> <span>$${total.toLocaleString('es-MX')} MXN</span>`;
     }
 }
 
