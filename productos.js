@@ -7,7 +7,7 @@ const productsData = [
         price: 250,
         category: 'gorras',
         image: 'Fotos/optimized/gorra1 frente.png', // Default image
-        images: ['Fotos/optimized/gorra1 frente.png', 'Fotos/optimized/gorra1 frente.png', 'Fotos/optimized/gorra1 frente.png'], // Placeholder for multiple angles
+        images: ['Fotos/optimized/gorra1 frente.png', 'Fotos/modelo gorra1.png', 'Fotos/modelo2 gorra1.png'], // Multiple angles
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
         sizes: [], // No sizes
