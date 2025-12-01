@@ -662,7 +662,7 @@ async function generateTryOn() {
     // Get relative path by removing origin
     const productImageUrl = mainImage.src.replace(window.location.origin + '/', '');
 
-    // Show loading
+    // Show loading with status
     document.getElementById('generate-btn').style.display = 'none';
     const resultDiv = document.getElementById('try-on-result');
     const spinner = document.getElementById('loading-spinner');
@@ -670,6 +670,7 @@ async function generateTryOn() {
 
     resultDiv.style.display = 'block';
     spinner.style.display = 'block';
+    spinner.textContent = '✨ Conectando con IA...'; // Initial status
     generatedImg.style.display = 'none';
 
     const formData = new FormData();
@@ -677,6 +678,8 @@ async function generateTryOn() {
     formData.append('productImage', productImageUrl);
 
     try {
+        spinner.textContent = '✨ Generando tu look (esto puede tardar)...';
+
         const response = await fetch('/api/try-on', {
             method: 'POST',
             body: formData
@@ -685,24 +688,42 @@ async function generateTryOn() {
         const data = await response.json();
 
         if (data.error) {
-            alert('⚠️ ' + data.error);
+            spinner.style.display = 'none';
+            // Show error inline
+            const errorMsg = document.createElement('p');
+            errorMsg.style.color = 'red';
+            errorMsg.style.marginTop = '10px';
+            errorMsg.textContent = '⚠️ ' + data.error;
+            resultDiv.appendChild(errorMsg);
+            // Remove error after a few seconds
+            setTimeout(() => errorMsg.remove(), 5000);
             return;
         }
+
+        spinner.style.display = 'none';
 
         // Display result
         if (data.result && (data.result.startsWith('data:image') || data.result.length > 1000)) {
             generatedImg.src = data.result.startsWith('data:') ? data.result : `data:image/png;base64,${data.result}`;
             generatedImg.style.display = 'block';
         } else {
-            // Fallback for text response or if image generation isn't direct
-            alert('AI Response: ' + data.result);
+            // Fallback for text response
+            const textResult = document.createElement('p');
+            textResult.textContent = 'IA: ' + data.result;
+            textResult.style.padding = '10px';
+            textResult.style.background = '#f0f0f0';
+            textResult.style.borderRadius = '8px';
+            resultDiv.appendChild(textResult);
         }
 
     } catch (error) {
         console.error('Error:', error);
-        alert('Hubo un error de conexión. Intenta de nuevo.');
-    } finally {
         spinner.style.display = 'none';
+        const errorMsg = document.createElement('p');
+        errorMsg.style.color = 'red';
+        errorMsg.textContent = 'Error de conexión. Intenta de nuevo.';
+        resultDiv.appendChild(errorMsg);
+    } finally {
         document.getElementById('generate-btn').style.display = 'block';
     }
 }

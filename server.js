@@ -85,31 +85,31 @@ app.post('/api/try-on', upload.single('image'), async (req, res) => {
         const result = await model.generateContent([prompt, ...imageParts]);
         const response = await result.response;
 
-        // Check if response has images (Gemini Image Generation)
-        // Note: The API for image generation might differ slightly. 
-        // If generateContent returns text, this model might not be the right one for *generation* via this method.
-        // However, assuming standard multimodal generation:
-        // If the model returns an image, it's usually in the candidates.
-        // For now, let's assume it returns a base64 image in the text or a specific attachment.
-        // Actually, current Gemini API for *image generation* (Imagen) is separate. 
-        // But if 'gemini-3-pro-image-preview' is a unified model, it might return it.
-        // Let's try to send back the text if it describes it, or the image if present.
-        // REALITY CHECK: Standard Gemini `generateContent` is text-only output currently (or code). 
-        // Image generation usually requires `imagen` model. 
-        // BUT the user insisted on this model name. I will try to inspect the response.
-        // If it fails, I'll log it.
+        console.log('--- Gemini API Response ---');
+        console.log(JSON.stringify(response, null, 2));
+        console.log('---------------------------');
 
-        // For the sake of the "demo", if the API returns text describing the image, we might need to mock the image 
-        // or use a different endpoint. BUT I will proceed with the user's request.
+        let outputData = '';
 
-        const text = response.text();
-        // If the model generates an image, it might be in `response.candidates[0].content.parts[0].inlineData`?
-        // I'll check for that.
+        // Try to get text
+        try {
+            outputData = response.text();
+        } catch (e) {
+            console.log('No text in response');
+        }
 
-        // Placeholder for image extraction logic (This is speculative based on "Nano Banana Pro")
-        // If it's just text, we send text.
+        // If no text, check for inline images in candidates
+        if (!outputData && response.candidates && response.candidates[0].content && response.candidates[0].content.parts) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.data) {
+                    console.log('Found inline image data!');
+                    outputData = part.inlineData.data; // This is the base64 image
+                    break;
+                }
+            }
+        }
 
-        res.json({ result: text });
+        res.json({ result: outputData });
 
     } catch (error) {
         console.error('Error generating try-on:', error);
