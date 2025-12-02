@@ -884,6 +884,44 @@
     .try-on-header h2 {
         font-size: 20px !important;
     }
+
+    /* VTO Mobile Layout Improvements */
+    .try-on-grid {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .try-on-col {
+        width: 100%;
+        min-height: 300px;
+        /* Ensure sufficient height */
+    }
+
+    .upload-area {
+        min-height: 300px;
+    }
+
+    .result-container {
+        min-height: 300px;
+        height: auto;
+        /* Allow it to grow */
+    }
+
+    .preview-image,
+    .result-container img {
+        object-fit: contain;
+        /* Prevent distortion */
+        background: #f5f5f5;
+        /* Background for non-square images */
+    }
+
+    .generate-btn {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        /* Add bottom spacing */
+        position: relative;
+        z-index: 5;
+    }
 }
 
 /* Loading State */
