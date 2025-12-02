@@ -886,6 +886,14 @@
     }
 
     /* VTO Mobile Layout Improvements */
+    .try-on-content {
+        overflow-y: auto;
+        height: 100%;
+        padding-bottom: 80px;
+        /* Space for bottom content */
+        -webkit-overflow-scrolling: touch;
+    }
+
     .try-on-grid {
         flex-direction: column;
         gap: 20px;
