@@ -866,6 +866,24 @@
     .shop-header {
         padding: 120px 0 60px;
     }
+
+    .try-on-header {
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 30px !important;
+        /* Override inline style */
+    }
+
+    .try-on-header button {
+        position: static !important;
+        /* Remove absolute positioning */
+        align-self: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .try-on-header h2 {
+        font-size: 20px !important;
+    }
 }
 
 /* Loading State */

@@ -257,6 +257,11 @@ function openProductModal(productId) {
 
     const modal = document.getElementById('product-modal');
     modal.dataset.productId = productId;
+    modal.dataset.imagePath = product.image; // Store clean image path for VTO
+
+    // Reset View State (Fix: Ensure we always start in details view)
+    document.getElementById('product-details-view').style.display = 'grid';
+    document.getElementById('try-on-view').style.display = 'none';
 
     // 1. Render Gallery (Main Image + Thumbnails)
     const modalImageContainer = document.getElementById('modal-image');
@@ -672,9 +677,13 @@ async function generateTryOn() {
     const input = document.getElementById('user-photo-input');
     if (!input.files[0]) return;
 
-    const mainImage = document.getElementById('main-product-image');
-    // Get relative path by removing origin
-    const productImageUrl = mainImage.src.replace(window.location.origin + '/', '');
+    const modal = document.getElementById('product-modal');
+    const productImageUrl = modal.dataset.imagePath; // Use stored clean path
+
+    if (!productImageUrl) {
+        alert('Error: No se pudo obtener la imagen del producto.');
+        return;
+    }
 
     // UI Updates for Loading State
     document.getElementById('generate-btn').style.display = 'none'; // Hide button to prevent double click
