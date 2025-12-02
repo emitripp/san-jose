@@ -24,7 +24,7 @@ const path = require('path');
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Initialize Gemini API
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || 'AIzaSyCc-h0jWfKK3w7Brzx4TkLe69iEs1nwAVI');
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-image-preview' });
 
 // Endpoint for Virtual Try-On
