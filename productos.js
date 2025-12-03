@@ -19,7 +19,7 @@ const productsData = [
         price: 250,
         category: 'gorras',
         image: 'Fotos/optimized/gorra2.png',
-        images: ['Fotos/optimized/gorra2.png', 'Fotos/optimized/modelo1 gorra ambar.png', 'Fotos/optimized/modelo2 gorra ambar.png'],
+        images: ['Fotos/optimized/gorra2.png', 'Fotos/optimized/gorra-ambar-foto2.png', 'Fotos/optimized/modelo2 gorra ambar.png', 'Fotos/optimized/gorra-ambar-foto4.png'],
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)', // Adjusted gradient to match yellow/amber
         description: 'Nuevo diseño con malla transpirable en tono ámbar.',
         sizes: [],
