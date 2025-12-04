@@ -31,7 +31,7 @@ const productsData = [
         price: 250,
         category: 'gorras',
         image: 'Fotos/optimized/gorra3.png',
-        images: ['Fotos/optimized/gorra3.png', 'Fotos/optimized/modelo1 gorra verde.png', 'Fotos/optimized/modelo2 gorra verde.png'],
+        images: ['Fotos/optimized/gorra3.png', 'Fotos/optimized/gorra-verde-foto1.png', 'Fotos/optimized/modelo2 gorra verde.png', 'Fotos/optimized/gorra-verde-foto2.png'],
         gradient: 'linear-gradient(135deg, #2E8B57 0%, #000 100%)', // Adjusted gradient to match green
         description: 'Estilo exclusivo en verde bosque para completar tu outfit.',
         sizes: [],
