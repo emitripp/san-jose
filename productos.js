@@ -55,7 +55,7 @@ const productsData = [
         price: 4000,
         category: 'maletas',
         image: 'Fotos/optimized/Maleta.png',
-        images: ['Fotos/optimized/Maleta.png', 'Fotos/optimized/maleta modelo1.png', 'Fotos/optimized/maleta modelo2.png'],
+        images: ['Fotos/optimized/Maleta.png', 'Fotos/optimized/foto-maleta-1.png', 'Fotos/optimized/maleta modelo2.png', 'Fotos/optimized/foto-maleta-2.png'],
         gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
         description: 'Maleta premium con gran capacidad y durabilidad.',
         sizes: [], // No sizes
