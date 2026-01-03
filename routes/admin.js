@@ -40,6 +40,12 @@ const verifyAdmin = (req, res, next) => {
 // POST /api/admin/login
 router.post('/login', async (req, res) => {
     try {
+        // Check if Supabase is configured
+        if (!supabaseAdmin) {
+            console.error('Supabase not configured - check SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY');
+            return res.status(500).json({ error: 'Database not configured' });
+        }
+
         const { email, password } = req.body;
 
         if (!email || !password) {
