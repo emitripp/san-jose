@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Legado San José</title>
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1>LEGADO SAN JOSÉ</h1>
+                <p>Panel de Administración</p>
+            </div>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" id="email" required placeholder="admin@legadosanjose.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary">Iniciar Sesión</button>
+                <p id="login-error" class="error-msg"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="dashboard-container" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>LEGADO</h2>
+                <span>Admin</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-section="products">
+                    <span class="icon">📦</span> Productos
+                </a>
+                <a href="#" class="nav-item" data-section="gallery">
+                    <span class="icon">🖼️</span> Galería
+                </a>
+                <a href="#" class="nav-item" data-section="content">
+                    <span class="icon">📝</span> Contenido
+                </a>
+                <a href="#" class="nav-item" data-section="settings">
+                    <span class="icon">⚙️</span> Configuración
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-info">
+                    <span id="admin-name">Admin</span>
+                    <small id="admin-email">admin@legadosanjose.com</small>
+                </div>
+                <button id="logout-btn" class="btn-logout">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Products Section -->
+            <section id="products-section" class="section active">
+                <div class="section-header">
+                    <h1>Productos</h1>
+                    <button id="add-product-btn" class="btn-primary">+ Nuevo Producto</button>
+                </div>
+                <div class="products-grid" id="admin-products-grid">
+                    <!-- Products will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Gallery Section -->
+            <section id="gallery-section" class="section">
+                <div class="section-header">
+                    <h1>Galería</h1>
+                    <button id="add-gallery-btn" class="btn-primary">+ Agregar Imagen</button>
+                </div>
+                <div class="gallery-grid" id="admin-gallery-grid">
+                    <!-- Gallery images will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Content Section -->
+            <section id="content-section" class="section">
+                <div class="section-header">
+                    <h1>Contenido del Sitio</h1>
+                </div>
+                <div class="content-editor" id="content-editor">
+                    <!-- Content editor will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="section">
+                <div class="section-header">
+                    <h1>Configuración</h1>
+                </div>
+                <div class="settings-content">
+                    <div class="settings-card">
+                        <h3>Cambiar Contraseña</h3>
+                        <form id="change-password-form">
+                            <div class="form-group">
+                                <label for="current-password">Contraseña Actual</label>
+                                <input type="password" id="current-password" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-password">Nueva Contraseña</label>
+                                <input type="password" id="new-password" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm-password">Confirmar Nueva Contraseña</label>
+                                <input type="password" id="confirm-password" required minlength="6">
+                            </div>
+                            <button type="submit" class="btn-primary">Cambiar Contraseña</button>
+                            <p id="password-message" class="message"></p>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="modal-title">Nuevo Producto</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="product-form">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-name">Nombre *</label>
+                            <input type="text" id="product-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-price">Precio (MXN) *</label>
+                            <input type="number" id="product-price" required min="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-category">Categoría *</label>
+                            <select id="product-category" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="gorras">Gorras</option>
+                                <option value="playeras">Playeras</option>
+                                <option value="mochilas">Mochilas</option>
+                                <option value="maletas">Maletas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-active">Estado</label>
+                            <select id="product-active">
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-description">Descripción</label>
+                        <textarea id="product-description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Imagen Principal</label>
+                        <div class="image-upload-area" id="main-image-upload">
+                            <input type="file" id="main-image-input" accept="image/*" style="display: none;">
+                            <div class="upload-placeholder" onclick="document.getElementById('main-image-input').click()">
+                                <span>📷</span>
+                                <p>Click para subir imagen</p>
+                            </div>
+                            <img id="main-image-preview" class="image-preview" style="display: none;">
+                        </div>
+                        <input type="hidden" id="product-image-url">
+                    </div>
+                    <div class="form-group">
+                        <label>Imágenes Adicionales</label>
+                        <div class="additional-images" id="additional-images">
+                            <!-- Additional images will be added here -->
+                        </div>
+                        <button type="button" class="btn-secondary" onclick="addAdditionalImage()">+ Agregar Imagen</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-sizes">Tallas (separadas por coma)</label>
+                        <input type="text" id="product-sizes" placeholder="S, M, L, XL">
+                    </div>
+                    <div class="form-group">
+                        <label>Variantes de Color</label>
+                        <div id="variants-container">
+                            <!-- Variants will be added here -->
+                        </div>
+                        <button type="button" class="btn-secondary" onclick="addVariant()">+ Agregar Variante</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Producto</button>
+                </div>
+                <input type="hidden" id="product-id">
+            </form>
+        </div>
+    </div>
+
+    <!-- Gallery Modal -->
+    <div id="gallery-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Agregar a Galería</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="gallery-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Imagen</label>
+                        <div class="image-upload-area" id="gallery-image-upload">
+                            <input type="file" id="gallery-image-input" accept="image/*" style="display: none;">
+                            <div class="upload-placeholder" onclick="document.getElementById('gallery-image-input').click()">
+                                <span>📷</span>
+                                <p>Click para subir imagen</p>
+                            </div>
+                            <img id="gallery-image-preview" class="image-preview" style="display: none;">
+                        </div>
+                        <input type="hidden" id="gallery-image-url">
+                    </div>
+                    <div class="form-group">
+                        <label for="gallery-alt">Texto Alternativo</label>
+                        <input type="text" id="gallery-alt" placeholder="Descripción de la imagen">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Confirmar Eliminación</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-message">¿Estás seguro de que deseas eliminar este elemento?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
+                <button type="button" class="btn-danger" id="confirm-delete-btn">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,16 +1,16 @@
-// Product Data
-// Product Data
-const productsData = [
+// Product Data - Now loaded from API
+// Fallback data in case API fails (maintains backwards compatibility)
+const fallbackProductsData = [
     {
         id: 1,
         name: 'Gorra Legado',
         price: 250,
         category: 'gorras',
-        image: 'Fotos/optimized/gorra1 frente.png', // Default image
-        images: ['Fotos/optimized/gorra1 frente.png', 'Fotos/optimized/gorra-legado-foto2.png', 'Fotos/optimized/modelo2 gorra1.png', 'Fotos/optimized/gorra-legado-foto4.png'], // Multiple angles
+        image: 'Fotos/optimized/gorra1 frente.png',
+        images: ['Fotos/optimized/gorra1 frente.png', 'Fotos/optimized/gorra-legado-foto2.png', 'Fotos/optimized/modelo2 gorra1.png', 'Fotos/optimized/gorra-legado-foto4.png'],
         gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
-        sizes: [], // No sizes
+        sizes: [],
         variants: []
     },
     {
@@ -20,7 +20,7 @@ const productsData = [
         category: 'gorras',
         image: 'Fotos/optimized/gorra2.png',
         images: ['Fotos/optimized/gorra2.png', 'Fotos/optimized/gorra-ambar-foto2.png', 'Fotos/optimized/modelo2 gorra ambar.png', 'Fotos/optimized/gorra-ambar-foto4.png'],
-        gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)', // Adjusted gradient to match yellow/amber
+        gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
         description: 'Nuevo diseño con malla transpirable en tono ámbar.',
         sizes: [],
         variants: []
@@ -32,7 +32,7 @@ const productsData = [
         category: 'gorras',
         image: 'Fotos/optimized/gorra3.png',
         images: ['Fotos/optimized/gorra3.png', 'Fotos/optimized/gorra-verde-foto1.png', 'Fotos/optimized/modelo2 gorra verde.png', 'Fotos/optimized/gorra-verde-foto2.png'],
-        gradient: 'linear-gradient(135deg, #2E8B57 0%, #000 100%)', // Adjusted gradient to match green
+        gradient: 'linear-gradient(135deg, #2E8B57 0%, #000 100%)',
         description: 'Estilo exclusivo en verde bosque para completar tu outfit.',
         sizes: [],
         variants: []
@@ -46,8 +46,8 @@ const productsData = [
         images: ['Fotos/optimized/Mochila.png', 'Fotos/optimized/modelo mochila1.png', 'Fotos/optimized/modelo mochila2.png'],
         gradient: 'linear-gradient(135deg, #64401B 0%, #EDE4CE 100%)',
         description: 'Mochila espaciosa y resistente, ideal para el día a día.',
-        sizes: [], // No sizes
-        variants: [] // No variants
+        sizes: [],
+        variants: []
     },
     {
         id: 3,
@@ -58,85 +58,66 @@ const productsData = [
         images: ['Fotos/optimized/Maleta.png', 'Fotos/optimized/foto-maleta-1.png', 'Fotos/optimized/maleta modelo2.png', 'Fotos/optimized/foto-maleta-2.png'],
         gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
         description: 'Maleta premium con gran capacidad y durabilidad.',
-        sizes: [], // No sizes
-        variants: [] // No variants
+        sizes: [],
+        variants: []
     },
     {
         id: 4,
         name: 'Playera Oficial',
         price: 200,
         category: 'playeras',
-        image: 'Fotos/playeras/optimized/blanco.png', // Default to White
+        image: 'Fotos/playeras/optimized/blanco.png',
         gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
         description: 'Playera cómoda con el diseño auténtico de Legado San José.',
         sizes: ['S', 'M', 'L'],
         variants: [
-            {
-                name: 'Blanca',
-                color: '#FFFFFF',
-                image: 'Fotos/playeras/optimized/blanco.png'
-            },
-            {
-                name: 'Azul Cielo',
-                color: '#87CEEB',
-                image: 'Fotos/playeras/optimized/azul cielo.png'
-            },
-            {
-                name: 'Azul Marino',
-                color: '#000080',
-                image: 'Fotos/playeras/optimized/azul marino.png'
-            },
-            {
-                name: 'Azul Rey',
-                color: '#4169E1',
-                image: 'Fotos/playeras/optimized/azul rey.png'
-            },
-            {
-                name: 'Gris',
-                color: '#808080',
-                image: 'Fotos/playeras/optimized/gris.png'
-            },
-            {
-                name: 'Hueso',
-                color: '#F5F5DC',
-                image: 'Fotos/playeras/optimized/hueso.png'
-            },
-            {
-                name: 'Lila',
-                color: '#C8A2C8',
-                image: 'Fotos/playeras/optimized/lila.png'
-            },
-            {
-                name: 'Roja',
-                color: '#DC143C',
-                image: 'Fotos/playeras/optimized/rojo.png'
-            },
-            {
-                name: 'Verde Militar',
-                color: '#4B5320',
-                image: 'Fotos/playeras/optimized/verde militar.png'
-            },
-            {
-                name: 'Verde',
-                color: '#008000',
-                image: 'Fotos/playeras/optimized/verde.png'
-            },
-            {
-                name: 'Vino',
-                color: '#722F37',
-                image: 'Fotos/playeras/optimized/vino.png'
-            }
+            { name: 'Blanca', color: '#FFFFFF', image: 'Fotos/playeras/optimized/blanco.png' },
+            { name: 'Azul Cielo', color: '#87CEEB', image: 'Fotos/playeras/optimized/azul cielo.png' },
+            { name: 'Azul Marino', color: '#000080', image: 'Fotos/playeras/optimized/azul marino.png' },
+            { name: 'Azul Rey', color: '#4169E1', image: 'Fotos/playeras/optimized/azul rey.png' },
+            { name: 'Gris', color: '#808080', image: 'Fotos/playeras/optimized/gris.png' },
+            { name: 'Hueso', color: '#F5F5DC', image: 'Fotos/playeras/optimized/hueso.png' },
+            { name: 'Lila', color: '#C8A2C8', image: 'Fotos/playeras/optimized/lila.png' },
+            { name: 'Roja', color: '#DC143C', image: 'Fotos/playeras/optimized/rojo.png' },
+            { name: 'Verde Militar', color: '#4B5320', image: 'Fotos/playeras/optimized/verde militar.png' },
+            { name: 'Verde', color: '#008000', image: 'Fotos/playeras/optimized/verde.png' },
+            { name: 'Vino', color: '#722F37', image: 'Fotos/playeras/optimized/vino.png' }
         ]
     }
 ];
 
+// Active products data (loaded from API or fallback)
+let productsData = [];
+
 // Cart State
 let cart = JSON.parse(localStorage.getItem('legado_cart')) || [];
 
-// Initialize Page
-document.addEventListener('DOMContentLoaded', () => {
+// Load products from API
+async function loadProductsFromAPI() {
+    try {
+        const response = await fetch('/api/products');
+        if (!response.ok) throw new Error('API not available');
+
+        const data = await response.json();
+        if (data && data.length > 0) {
+            productsData = data;
+            console.log('✅ Products loaded from API:', productsData.length);
+        } else {
+            throw new Error('No products in API');
+        }
+    } catch (error) {
+        console.warn('⚠️ Could not load from API, using fallback data:', error.message);
+        productsData = fallbackProductsData;
+    }
+
+    // Render products after loading
     renderProducts();
     updateCartUI();
+}
+
+// Initialize Page
+document.addEventListener('DOMContentLoaded', () => {
+    loadProductsFromAPI();
     setupEventListeners();
 
     // Escuchar mensaje de limpieza de carrito desde la página de éxito
@@ -148,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
 
 // Render Products
 function renderProducts(filter = 'all') {

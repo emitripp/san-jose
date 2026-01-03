@@ -14,11 +14,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
 
+// Serve admin folder as static
+app.use('/admin', express.static('admin'));
+
 // Google Generative AI Setup
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+
+// Import API Routes
+const adminRoutes = require('./routes/admin');
+const publicRoutes = require('./routes/public');
+
+// Use API Routes
+app.use('/api/admin', adminRoutes);
+app.use('/api', publicRoutes);
 
 // Configure Multer for memory storage
 const upload = multer({ storage: multer.memoryStorage() });
@@ -26,6 +37,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-image-preview' });
+
 
 // Endpoint for Virtual Try-On
 app.post('/api/try-on', upload.single('image'), async (req, res) => {
