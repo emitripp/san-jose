@@ -13,8 +13,8 @@
 
         // About section
         'about.title': '.about-content .section-title',
-        'about.text_1': '.about-content p:first-of-type',
-        'about.text_2': '.about-content p:nth-of-type(2)',
+        'about.paragraph1': '.about-content p:first-of-type',
+        'about.paragraph2': '.about-content p:nth-of-type(2)',
 
         // Footer
         'footer.tagline': '.footer-column:first-child p'
