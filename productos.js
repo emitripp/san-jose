@@ -317,6 +317,21 @@ function openProductModal(productId) {
     // Show modal
     modal.classList.add('active');
     document.body.classList.add('no-scroll');
+
+    // Google Analytics: Track product view
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'view_item', {
+            currency: 'MXN',
+            value: product.price,
+            items: [{
+                item_id: product.id,
+                item_name: product.name,
+                item_category: product.category,
+                price: product.price,
+                quantity: 1
+            }]
+        });
+    }
 }
 
 // Helper: Change Main Image
@@ -437,6 +452,22 @@ function addToCartFromModal() {
         // Save to localStorage
         localStorage.setItem('cart', JSON.stringify(cart));
 
+        // Google Analytics: Track add to cart
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'add_to_cart', {
+                currency: 'MXN',
+                value: product.price * quantity,
+                items: [{
+                    item_id: product.id,
+                    item_name: product.name,
+                    item_category: product.category,
+                    item_variant: variant || 'N/A',
+                    price: product.price,
+                    quantity: quantity
+                }]
+            });
+        }
+
         // Update UI
         updateCartUI();
 
@@ -536,6 +567,22 @@ async function proceedToCheckout() {
     if (cart.length === 0) {
         alert('Tu carrito está vacío');
         return;
+    }
+
+    // Google Analytics: Track begin checkout
+    if (typeof gtag !== 'undefined') {
+        const totalValue = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        gtag('event', 'begin_checkout', {
+            currency: 'MXN',
+            value: totalValue,
+            items: cart.map(item => ({
+                item_id: item.id,
+                item_name: item.name,
+                item_variant: item.variant || 'N/A',
+                price: item.price,
+                quantity: item.quantity
+            }))
+        });
     }
 
     // Mostrar loading en el botón

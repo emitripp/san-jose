@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compra Exitosa - Legado San José</title>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JT5P73Z3EV"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-JT5P73Z3EV');
+    </script>
+
     <link rel="stylesheet" href="styles.css">
     <style>
         .success-container {
@@ -222,6 +232,23 @@
             document.getElementById('loading').style.display = 'none';
             document.getElementById('success-content').style.display = 'block';
             document.getElementById('error-content').style.display = 'none';
+
+            // Google Analytics: Track purchase conversion
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'purchase', {
+                    transaction_id: orderData.id,
+                    value: orderData.total,
+                    currency: 'MXN',
+                    tax: 0,
+                    shipping: orderData.shipping,
+                    items: orderData.items.map(item => ({
+                        item_id: item.id || item.name,
+                        item_name: item.name,
+                        price: item.price,
+                        quantity: item.quantity
+                    }))
+                });
+            }
 
             // Crear lista de productos
             const productsList = orderData.items.map(item => `
