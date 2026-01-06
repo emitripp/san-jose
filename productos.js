@@ -147,13 +147,13 @@ function renderProducts(filter = 'all') {
             : `<div class="placeholder-product" style="background: ${product.gradient};"><span>${product.name}</span></div>`
         }
                 <div class="product-overlay">
-                    <button class="quick-view" onclick="openProductModal(${product.id})">Vista Rápida</button>
+                    <button class="quick-view" onclick="openProductModal('${product.id}')">Vista Rápida</button>
                 </div>
             </div>
             <div class="product-info">
                 <h3 class="product-name">${product.name}</h3>
                 <div class="product-price">$${product.price.toLocaleString('es-MX')} MXN</div>
-                <button class="buy-now-btn" onclick="openProductModal(${product.id})">Comprar Ahora</button>
+                <button class="buy-now-btn" onclick="openProductModal('${product.id}')">Comprar Ahora</button>
             </div>
         </div>
     `).join('');
@@ -234,7 +234,8 @@ function setupEventListeners() {
 
 // Open Product Modal
 function openProductModal(productId) {
-    const product = productsData.find(p => p.id === productId);
+    // Use String comparison to handle both number and string IDs safely
+    const product = productsData.find(p => String(p.id) === String(productId));
     if (!product) return;
 
     const modal = document.getElementById('product-modal');
@@ -333,8 +334,9 @@ function selectVariant(btn) {
 
     // 2. Get Product and Variant Data
     const modal = document.getElementById('product-modal');
-    const productId = parseInt(modal.dataset.productId);
-    const product = productsData.find(p => p.id === productId);
+    // Ensure string comparison
+    const productId = modal.dataset.productId;
+    const product = productsData.find(p => String(p.id) === String(productId));
     const variantName = btn.dataset.variant;
 
     if (!product) return;
@@ -375,8 +377,8 @@ function addToCartFromModal() {
             return;
         }
 
-        const productId = parseInt(modal.dataset.productId);
-        const product = productsData.find(p => p.id === productId);
+        const productId = modal.dataset.productId;
+        const product = productsData.find(p => String(p.id) === String(productId));
 
         if (!product) {
             alert('Error: Producto no encontrado');
@@ -412,8 +414,9 @@ function addToCartFromModal() {
         const quantity = parseInt(quantityInput.value) || 1;
 
         // Check if item already in cart (match ID, Size, AND Variant)
+        // Use loose/string comparison for ID
         const existingItemIndex = cart.findIndex(item =>
-            item.id === productId && item.size === size && item.variant === variant
+            String(item.id) === String(productId) && item.size === size && item.variant === variant
         );
 
         if (existingItemIndex > -1) {
