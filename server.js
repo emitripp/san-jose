@@ -24,6 +24,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Import API Routes
+const { supabaseAdmin } = require('./lib/supabase');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 
@@ -354,7 +355,21 @@ app.get('/verify-session/:sessionId', async (req, res) => {
                 paid: true
             };
 
-            // orders.push(order); // REMOVED: No local storage
+            // Save to Supabase
+            if (supabaseAdmin) {
+                const { error: dbError } = await supabaseAdmin
+                    .from('orders')
+                    .insert(order);
+
+                if (dbError) {
+                    console.error('Error saving order to Supabase:', dbError);
+                    // Don't fail the request, just log it. The user still paid.
+                } else {
+                    console.log('Order saved to Supabase:', order.id);
+                }
+            } else {
+                console.warn('Supabase not configured, order not saved to DB');
+            }
 
             console.log('Order created:', order.id);
 

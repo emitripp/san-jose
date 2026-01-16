@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -281,6 +282,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="admin-container">
         <div class="admin-header">
@@ -370,7 +372,7 @@
         // Cargar pedidos desde el servidor
         async function loadOrders() {
             try {
-                const response = await fetch('http://localhost:3000/admin/orders');
+                const response = await fetch('/api/admin/orders');
                 allOrders = await response.json();
                 updateStats();
                 displayOrders(currentFilter);
@@ -515,7 +517,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:3000/admin/orders/${orderId}/status`, {
+                const response = await fetch(`/api/admin/orders/${orderId}/status`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -547,4 +549,5 @@
         setInterval(loadOrders, 30000);
     </script>
 </body>
+
 </html>

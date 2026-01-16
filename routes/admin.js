@@ -518,4 +518,58 @@ router.put('/content/:section/:key', verifyAdmin, async (req, res) => {
     }
 });
 
+// ============================================
+// ORDERS ROUTES
+// ============================================
+
+// GET /api/admin/orders - Get all orders
+router.get('/orders', async (req, res) => {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('orders')
+            .select('*')
+            .order('createdAt', { ascending: false });
+
+        if (error) throw error;
+        res.json(data);
+
+    } catch (error) {
+        console.error('Get orders error:', error);
+        res.status(500).json({ error: 'Failed to fetch orders' });
+    }
+});
+
+// PATCH /api/admin/orders/:id/status - Update order status
+router.patch('/orders/:id/status', async (req, res) => {
+    try {
+        const { status, trackingNumber } = req.body;
+
+        if (!status) {
+            return res.status(400).json({ error: 'Status is required' });
+        }
+
+        const updateData = { status };
+        if (trackingNumber) {
+            updateData.trackingNumber = trackingNumber;
+        }
+
+        const { data, error } = await supabaseAdmin
+            .from('orders')
+            .update(updateData)
+            .eq('id', req.params.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // TODO: Send email notification to user about status update?
+
+        res.json(data);
+
+    } catch (error) {
+        console.error('Update order status error:', error);
+        res.status(500).json({ error: 'Failed to update order status' });
+    }
+});
+
 module.exports = router;
