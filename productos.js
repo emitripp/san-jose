@@ -450,7 +450,7 @@ function addToCartFromModal() {
         }
 
         // Save to localStorage
-        localStorage.setItem('cart', JSON.stringify(cart));
+        saveCart();
 
         // Google Analytics: Track add to cart
         if (typeof gtag !== 'undefined') {
