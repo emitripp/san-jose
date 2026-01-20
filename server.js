@@ -57,23 +57,29 @@ app.post('/api/try-on', upload.single('image'), async (req, res) => {
         // Since product images are local, we can read them from disk.
 
         let productImageBuffer;
-        if (productImageUrl.startsWith('http') || productImageUrl.startsWith('data:')) {
-            // If it's a remote URL or data URI (not expected for local files), handle accordingly
-            // For this local app, productImageUrl is likely 'Fotos/...'
-            // We can read it from the file system.
-            const localPath = path.join(__dirname, productImageUrl);
-            if (fs.existsSync(localPath)) {
-                productImageBuffer = fs.readFileSync(localPath);
-            } else {
-                return res.status(404).json({ error: 'Product image not found' });
+        if (productImageUrl.startsWith('http')) {
+            // Fetch remote image (e.g., Supabase)
+            const imageResponse = await fetch(productImageUrl);
+            if (!imageResponse.ok) {
+                return res.status(404).json({ error: 'Failed to fetch remote product image' });
             }
+            const arrayBuffer = await imageResponse.arrayBuffer();
+            productImageBuffer = Buffer.from(arrayBuffer);
+        } else if (productImageUrl.startsWith('data:')) {
+            // Handle base64 data URI
+            const base64Data = productImageUrl.split(';base64,').pop();
+            productImageBuffer = Buffer.from(base64Data, 'base64');
         } else {
-            // Relative path
-            const localPath = path.join(__dirname, productImageUrl);
+            // Local file path
+            // Remove leading slash if present to avoid absolute path confusion
+            const cleanPath = productImageUrl.startsWith('/') ? productImageUrl.slice(1) : productImageUrl;
+            const localPath = path.join(__dirname, cleanPath);
+
             if (fs.existsSync(localPath)) {
                 productImageBuffer = fs.readFileSync(localPath);
             } else {
-                return res.status(404).json({ error: 'Product image not found' });
+                console.error('Local image not found:', localPath);
+                return res.status(404).json({ error: 'Product image not found locally' });
             }
         }
 

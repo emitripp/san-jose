@@ -113,6 +113,7 @@ async function loadProductsFromAPI() {
     // Render products after loading
     renderProducts();
     updateCartUI();
+    preloadImages();
 }
 
 // Initialize Page
@@ -363,6 +364,7 @@ function selectVariant(btn) {
     const mainImage = document.getElementById('main-product-image');
     if (mainImage && variant.image) {
         mainImage.src = variant.image;
+        modal.dataset.imagePath = variant.image; // Update for VTO
     }
 
     // 4. Update Thumbnails
@@ -488,7 +490,7 @@ function addToCartFromModal() {
 function updateCartUI() {
     const cartCount = document.getElementById('cart-count');
     const cartItems = document.getElementById('cart-items');
-    const cartTotalElement = document.getElementById('cart-total');
+    const cartTotalElement = document.getElementById('cart-summary');
 
     // Update count
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -509,7 +511,12 @@ function updateCartUI() {
                     <p>Tu carrito está vacío</p>
                 </div>
             `;
-            cartTotalElement.innerHTML = '<span>Total:</span> <span>$0 MXN</span>';
+            cartTotalElement.innerHTML = `
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span>$0 MXN</span>
+                </div>
+            `;
             return;
         }
 
@@ -536,7 +543,21 @@ function updateCartUI() {
             `).join('');
 
         const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        cartTotalElement.innerHTML = `<span>Total:</span> <span>$${total.toLocaleString('es-MX')} MXN</span>`;
+
+        cartTotalElement.innerHTML = `
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>$${total.toLocaleString('es-MX')} MXN</span>
+            </div>
+            <div class="summary-row shipping-note">
+                <span>Envío:</span>
+                <span>Calculado al pagar</span>
+            </div>
+            <div class="summary-row total-row">
+                <span>Total:</span>
+                <span>$${total.toLocaleString('es-MX')} MXN + Envío</span>
+            </div>
+        `;
     }
 }
 
@@ -690,6 +711,7 @@ function closeTryOn() {
     document.getElementById('user-photo-input').value = '';
     document.getElementById('user-photo-preview').style.display = 'none';
     document.getElementById('generate-btn').style.display = 'none';
+    document.getElementById('remove-photo-btn').style.display = 'none';
 }
 
 function handlePhotoUpload(input) {
@@ -699,10 +721,24 @@ function handlePhotoUpload(input) {
             const preview = document.getElementById('user-photo-preview');
             preview.src = e.target.result;
             preview.style.display = 'block';
+            document.querySelector('.upload-placeholder').style.display = 'none'; // Hide placeholder
             document.getElementById('generate-btn').style.display = 'block';
+            document.getElementById('remove-photo-btn').style.display = 'flex';
         }
         reader.readAsDataURL(input.files[0]);
     }
+}
+
+// Remove uploaded photo
+function removePhoto(event) {
+    if (event) event.stopPropagation(); // Prevent triggering upload click
+
+    document.getElementById('user-photo-input').value = '';
+    document.getElementById('user-photo-preview').style.display = 'none';
+    document.getElementById('user-photo-preview').src = '';
+    document.querySelector('.upload-placeholder').style.display = 'flex'; // Show placeholder
+    document.getElementById('generate-btn').style.display = 'none';
+    document.getElementById('remove-photo-btn').style.display = 'none';
 }
 
 async function generateTryOn() {
@@ -822,7 +858,4 @@ function preloadImages() {
 
 // Start preloading when page loads
 // Start preloading when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    preloadImages();
-    initProductModal(); // Initialize modal logic
-});
+

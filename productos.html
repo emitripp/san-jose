@@ -9,10 +9,10 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-JT5P73Z3EV"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-JT5P73Z3EV');
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-JT5P73Z3EV');
     </script>
 
     <link rel="stylesheet" href="styles.css">
@@ -96,9 +96,11 @@
             <!-- Cart items will be dynamically added here -->
         </div>
         <div class="cart-footer">
-            <div class="cart-total">
-                <span>Total:</span>
-                <span id="cart-total">$0 MXN</span>
+            <div id="cart-summary" class="cart-summary">
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span>$0 MXN</span>
+                </div>
             </div>
 
             <div class="promo-code-section" style="margin-bottom: 15px;">
@@ -192,6 +194,10 @@
                             <input type="file" id="user-photo-input" accept="image/*" style="display: none;"
                                 onchange="handlePhotoUpload(this)">
                             <img id="user-photo-preview" src="" class="preview-image">
+                            <div id="remove-photo-btn" class="remove-photo-btn" onclick="removePhoto(event)"
+                                style="display: none;">
+                                &times;
+                            </div>
                         </div>
 
                         <button id="generate-btn" class="cta-button generate-btn" onclick="generateTryOn()"
