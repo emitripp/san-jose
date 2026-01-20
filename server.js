@@ -155,7 +155,7 @@ app.post('/create-checkout-session', async (req, res) => {
         const { items, pickupCode } = req.body;
 
         // Verificar código interno
-        const isInternalOrder = pickupCode === 'DES-GOCA';
+        const isInternalOrder = pickupCode === 'GOCA';
 
         // Mapa de precios internos (Precio Goca)
         const INTERNAL_PRICES = {

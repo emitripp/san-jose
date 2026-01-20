@@ -1046,3 +1046,8 @@
     border-radius: 8px;
     display: none;
 }
+
+/* Fix mobile input zoom - ensure > 16px */
+#internal-code {
+    font-size: 16px !important;
+}
