@@ -86,6 +86,44 @@ const fallbackProductsData = [
     }
 ];
 
+// Cart & History Management
+function openCart() {
+    const sidebar = document.getElementById('cart-sidebar');
+    // Ensure we don't push state if already open
+    if (!sidebar.classList.contains('open')) {
+        sidebar.classList.add('open');
+        document.body.classList.add('no-scroll');
+        // Push state so back button closes cart
+        history.pushState({ modal: 'cart' }, '', '#cart');
+    }
+}
+
+function closeCart() {
+    // If called manually (e.g. close button), go back in history
+    // This will trigger popstate, which closes the UI
+    if (history.state && history.state.modal === 'cart') {
+        history.back();
+    } else {
+        // Fallback if no state (e.g. refreshed page)
+        closeCartUI();
+    }
+}
+
+function closeCartUI() {
+    const sidebar = document.getElementById('cart-sidebar');
+    if (sidebar) sidebar.classList.remove('open');
+    document.body.classList.remove('no-scroll');
+}
+
+// Global Back Button Handler (Swipe on Mobile)
+window.addEventListener('popstate', (event) => {
+    // If we are navigating back from the cart state
+    const sidebar = document.getElementById('cart-sidebar');
+    if (sidebar && sidebar.classList.contains('open')) {
+        closeCartUI();
+    }
+});
+
 // Active products data (loaded from API or fallback)
 let productsData = [];
 
@@ -178,18 +216,12 @@ function setupEventListeners() {
     // Cart toggle
     const cartToggle = document.getElementById('cart-toggle');
     if (cartToggle) {
-        cartToggle.addEventListener('click', () => {
-            document.getElementById('cart-sidebar').classList.add('open');
-            document.body.classList.add('no-scroll');
-        });
+        cartToggle.addEventListener('click', openCart);
     }
 
     const cartClose = document.getElementById('cart-close');
     if (cartClose) {
-        cartClose.addEventListener('click', () => {
-            document.getElementById('cart-sidebar').classList.remove('open');
-            document.body.classList.remove('no-scroll');
-        });
+        cartClose.addEventListener('click', closeCart);
     }
 
     // Modal close
@@ -477,8 +509,7 @@ function addToCartFromModal() {
         closeProductModal();
 
         // Open cart sidebar
-        document.getElementById('cart-sidebar').classList.add('open');
-        document.body.classList.add('no-scroll');
+        openCart();
 
     } catch (error) {
         console.error('Error adding to cart:', error);
