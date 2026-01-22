@@ -10,6 +10,7 @@
         'hero.subtitle': '.hero-subtitle',
         'hero.title': '.hero-title',
         'hero.description': '.hero-description',
+        'hero.button': '.cta-button',
 
         // About section
         'about.title': '.about-content .section-title',

@@ -7,6 +7,7 @@ let authToken = localStorage.getItem('admin_token');
 let currentProducts = [];
 let currentGallery = [];
 let currentContent = [];
+let currentCategories = [];
 let deleteCallback = null;
 
 // ============================================
@@ -46,11 +47,23 @@ function setupEventListeners() {
     // Add gallery button
     document.getElementById('add-gallery-btn').addEventListener('click', () => openGalleryModal());
 
+    // Add category button
+    const addCategoryBtn = document.getElementById('add-category-btn');
+    if (addCategoryBtn) {
+        addCategoryBtn.addEventListener('click', () => openCategoryModal());
+    }
+
     // Product form
     document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
 
     // Gallery form
     document.getElementById('gallery-form').addEventListener('submit', handleGallerySubmit);
+
+    // Category form
+    const categoryForm = document.getElementById('category-form');
+    if (categoryForm) {
+        categoryForm.addEventListener('submit', handleCategorySubmit);
+    }
 
     // Change password form
     document.getElementById('change-password-form').addEventListener('submit', handlePasswordChange);
@@ -152,6 +165,7 @@ function showDashboard(admin) {
     document.getElementById('admin-email').textContent = admin.email;
 
     // Load initial data
+    loadCategories(); // Load categories first for product form
     loadProducts();
     loadGallery();
     loadContent();
@@ -611,20 +625,114 @@ function getAdditionalImages() {
 function addVariant(data = null) {
     const container = document.getElementById('variants-container');
     const item = document.createElement('div');
+    const variantId = Date.now() + Math.random().toString(36).substr(2, 9);
     item.className = 'variant-item';
+    item.dataset.variantId = variantId;
+
+    const hasImage = data?.image && data.image.length > 0;
+
+    // Fix image path for display (relative paths need to go up from /admin/)
+    const fixImagePath = (url) => {
+        if (!url) return '';
+        if (url.startsWith('http') || url.startsWith('data:')) return url;
+        return '../' + url;
+    };
+
+    const displayImageUrl = hasImage ? fixImagePath(data.image) : '';
+
     item.innerHTML = `
-        <div class="form-group">
-            <label>Nombre</label>
-            <input type="text" class="variant-name" value="${data?.name || ''}" placeholder="Ej: Azul">
+        <div class="variant-row">
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" class="variant-name" value="${data?.name || ''}" placeholder="Ej: Azul">
+            </div>
+            <div class="form-group">
+                <label>Color</label>
+                <input type="color" class="variant-color" value="${data?.color || '#000000'}">
+            </div>
+            <button type="button" class="remove-variant" onclick="this.parentElement.parentElement.remove()">×</button>
         </div>
-        <div class="form-group">
-            <label>Color</label>
-            <input type="color" class="variant-color" value="${data?.color || '#000000'}">
+        <div class="variant-image-section">
+            <label>Imagen de variante</label>
+            <div class="variant-image-upload" id="variant-upload-${variantId}">
+                <input type="file" class="variant-image-input" id="variant-input-${variantId}" accept="image/*" style="display: none;">
+                <div class="variant-upload-placeholder ${hasImage ? 'hidden' : ''}" onclick="document.getElementById('variant-input-${variantId}').click()">
+                    <span>📷</span>
+                    <p>Click para subir imagen</p>
+                </div>
+                <div class="variant-image-preview-container ${hasImage ? '' : 'hidden'}">
+                    <img class="variant-image-preview" src="${displayImageUrl}" alt="Preview">
+                    <div class="variant-image-actions">
+                        <button type="button" class="btn-change-image" onclick="document.getElementById('variant-input-${variantId}').click()">Cambiar</button>
+                        <button type="button" class="btn-remove-image" onclick="removeVariantImage('${variantId}')">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" class="variant-image" value="${data?.image || ''}">
         </div>
-        <button type="button" class="remove-variant" onclick="this.parentElement.remove()">×</button>
-        <input type="hidden" class="variant-image" value="${data?.image || ''}">
     `;
     container.appendChild(item);
+
+    // Add event listener for image upload
+    const imageInput = item.querySelector(`#variant-input-${variantId}`);
+    imageInput.addEventListener('change', (e) => handleVariantImageUpload(e, variantId));
+}
+
+async function handleVariantImageUpload(e, variantId) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        showToast('Subiendo imagen...', 'warning');
+
+        const response = await fetch(`${API_BASE}/upload/product`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}` },
+            body: formData
+        });
+
+        if (!response.ok) throw new Error('Upload failed');
+
+        const data = await response.json();
+
+        // Update the variant item
+        const variantItem = document.querySelector(`[data-variant-id="${variantId}"]`);
+        if (variantItem) {
+            const preview = variantItem.querySelector('.variant-image-preview');
+            const previewContainer = variantItem.querySelector('.variant-image-preview-container');
+            const placeholder = variantItem.querySelector('.variant-upload-placeholder');
+            const hiddenInput = variantItem.querySelector('.variant-image');
+
+            preview.src = data.url;
+            previewContainer.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            hiddenInput.value = data.url;
+        }
+
+        showToast('Imagen subida', 'success');
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        showToast('Error al subir imagen', 'error');
+    }
+}
+
+function removeVariantImage(variantId) {
+    const variantItem = document.querySelector(`[data-variant-id="${variantId}"]`);
+    if (variantItem) {
+        const preview = variantItem.querySelector('.variant-image-preview');
+        const previewContainer = variantItem.querySelector('.variant-image-preview-container');
+        const placeholder = variantItem.querySelector('.variant-upload-placeholder');
+        const hiddenInput = variantItem.querySelector('.variant-image');
+
+        preview.src = '';
+        previewContainer.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        hiddenInput.value = '';
+    }
 }
 
 function getVariants() {
@@ -677,8 +785,8 @@ function renderGallery() {
     };
 
     grid.innerHTML = currentGallery.map(img => `
-        <div class="gallery-item" data-id="${img.id}">
-            <img src="${fixImagePath(img.image_url)}" alt="${img.alt_text || 'Gallery image'}" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><rect fill=\\'%23eee\\' width=\\'100\\' height=\\'100\\'/></svg>'">
+        <div class="gallery-item" data-id="${img.id}" style="cursor: default;">
+            <img src="${fixImagePath(img.image_url)}" alt="${img.alt_text || 'Gallery image'}" style="cursor: default;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><rect fill=\\'%23eee\\' width=\\'100\\' height=\\'100\\'/></svg>'">
             <div class="gallery-item-overlay">
                 <button onclick="confirmDeleteGallery('${img.id}')">Eliminar</button>
             </div>
@@ -862,6 +970,185 @@ async function updateContent(section, key, value) {
         showToast('Error al actualizar contenido', 'error');
     }
 }
+
+// ============================================
+// CATEGORIES
+// ============================================
+
+async function loadCategories() {
+    try {
+        const response = await fetch(`${API_BASE}/categories`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load categories');
+
+        currentCategories = await response.json();
+        renderCategories();
+        updateCategorySelect();
+
+    } catch (error) {
+        console.error('Load categories error:', error);
+    }
+}
+
+function renderCategories() {
+    const list = document.getElementById('admin-categories-list');
+    if (!list) return;
+
+    if (currentCategories.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No hay categorías. Haz clic en "+ Nueva Categoría" para agregar una.</p>';
+        return;
+    }
+
+    list.innerHTML = `
+        <div class="categories-table">
+            <div class="categories-header">
+                <span>Nombre</span>
+                <span>Slug</span>
+                <span>Estado</span>
+                <span>Acciones</span>
+            </div>
+            ${currentCategories.map(cat => `
+                <div class="category-row" data-id="${cat.id}">
+                    <span class="category-name">${cat.name}</span>
+                    <span class="category-slug">${cat.slug}</span>
+                    <span class="category-status ${cat.is_active ? 'active' : 'inactive'}">
+                        ${cat.is_active ? 'Activa' : 'Inactiva'}
+                    </span>
+                    <div class="category-actions">
+                        <button class="btn-edit-sm" onclick="editCategory('${cat.id}')">Editar</button>
+                        <button class="btn-delete-sm" onclick="confirmDeleteCategory('${cat.id}')">×</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function updateCategorySelect() {
+    const select = document.getElementById('product-category');
+    if (!select) return;
+
+    // Keep the first "Seleccionar..." option
+    const firstOption = select.querySelector('option[value=""]');
+    select.innerHTML = '';
+    if (firstOption) {
+        select.appendChild(firstOption);
+    } else {
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Seleccionar...';
+        select.appendChild(defaultOption);
+    }
+
+    // Add categories
+    currentCategories.forEach(cat => {
+        if (cat.is_active) {
+            const option = document.createElement('option');
+            option.value = cat.slug;
+            option.textContent = cat.name;
+            select.appendChild(option);
+        }
+    });
+}
+
+function openCategoryModal(category = null) {
+    const modal = document.getElementById('category-modal');
+    const form = document.getElementById('category-form');
+    const title = document.getElementById('category-modal-title');
+
+    form.reset();
+    document.getElementById('category-id').value = '';
+
+    if (category) {
+        title.textContent = 'Editar Categoría';
+        document.getElementById('category-id').value = category.id;
+        document.getElementById('category-name').value = category.name;
+        document.getElementById('category-active').value = category.is_active ? 'true' : 'false';
+    } else {
+        title.textContent = 'Nueva Categoría';
+    }
+
+    modal.classList.add('active');
+}
+
+function editCategory(id) {
+    const category = currentCategories.find(c => c.id === id);
+    if (category) {
+        openCategoryModal(category);
+    }
+}
+
+async function handleCategorySubmit(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('category-id').value;
+    const isEdit = !!id;
+
+    const categoryData = {
+        name: document.getElementById('category-name').value,
+        is_active: document.getElementById('category-active').value === 'true'
+    };
+
+    try {
+        const url = isEdit ? `${API_BASE}/categories/${id}` : `${API_BASE}/categories`;
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(categoryData)
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to save category');
+        }
+
+        showToast(isEdit ? 'Categoría actualizada' : 'Categoría creada', 'success');
+        closeAllModals();
+        loadCategories();
+
+    } catch (error) {
+        console.error('Save category error:', error);
+        showToast(error.message || 'Error al guardar categoría', 'error');
+    }
+}
+
+function confirmDeleteCategory(id) {
+    const category = currentCategories.find(c => c.id === id);
+    document.getElementById('confirm-message').textContent =
+        `¿Estás seguro de que deseas eliminar la categoría "${category?.name || ''}"?`;
+
+    deleteCallback = () => deleteCategory(id);
+    document.getElementById('confirm-modal').classList.add('active');
+}
+
+async function deleteCategory(id) {
+    try {
+        const response = await fetch(`${API_BASE}/categories/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to delete category');
+
+        showToast('Categoría eliminada', 'success');
+        loadCategories();
+
+    } catch (error) {
+        console.error('Delete category error:', error);
+        showToast('Error al eliminar categoría', 'error');
+    }
+}
+
+// Make category functions globally available
+window.editCategory = editCategory;
+window.confirmDeleteCategory = confirmDeleteCategory;
 
 // ============================================
 // UTILITIES

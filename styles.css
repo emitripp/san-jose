@@ -513,7 +513,7 @@ a {
     position: relative;
     overflow: hidden;
     border-radius: 8px;
-    cursor: pointer;
+    cursor: default;
     transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 

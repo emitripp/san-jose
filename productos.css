@@ -73,6 +73,25 @@
     transform: translateY(-2px);
 }
 
+/* Cart Overlay */
+.cart-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.cart-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* Cart Sidebar */
 .cart-sidebar {
     position: fixed;
@@ -317,7 +336,8 @@
     max-width: 900px;
     width: 90%;
     max-height: 90vh;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     animation: modalSlideUp 0.4s ease;
 }
 
@@ -781,7 +801,31 @@
     box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--primary);
 }
 
-/* Responsive */
+/* Responsive - Medium screens and small heights */
+@media (max-width: 1024px), (max-height: 800px) {
+    .modal-content {
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+
+    .modal-body {
+        gap: 20px;
+        padding: 25px;
+    }
+}
+
+@media (max-width: 900px) {
+    .modal-body {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .modal-image {
+        max-height: 40vh;
+    }
+}
+
 @media (max-width: 768px) {
     .cart-sidebar {
         width: 100%;
@@ -799,6 +843,7 @@
         border-radius: 0;
         display: flex;
         flex-direction: column;
+        overflow-y: auto;
         overflow-x: hidden;
         /* Prevent horizontal scroll */
     }

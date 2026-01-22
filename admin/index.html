@@ -55,6 +55,9 @@
                 <a href="#" class="nav-item" data-section="gallery">
                     <span class="icon">🖼️</span> Galería
                 </a>
+                <a href="#" class="nav-item" data-section="categories">
+                    <span class="icon">🏷️</span> Categorías
+                </a>
                 <a href="#" class="nav-item" data-section="content">
                     <span class="icon">📝</span> Contenido
                 </a>
@@ -92,6 +95,17 @@
                 </div>
                 <div class="gallery-grid" id="admin-gallery-grid">
                     <!-- Gallery images will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Categories Section -->
+            <section id="categories-section" class="section">
+                <div class="section-header">
+                    <h1>Categorías</h1>
+                    <button id="add-category-btn" class="btn-primary">+ Nueva Categoría</button>
+                </div>
+                <div class="categories-list" id="admin-categories-list">
+                    <!-- Categories will be loaded here -->
                 </div>
             </section>
 
@@ -160,10 +174,7 @@
                             <label for="product-category">Categoría *</label>
                             <select id="product-category" required>
                                 <option value="">Seleccionar...</option>
-                                <option value="gorras">Gorras</option>
-                                <option value="playeras">Playeras</option>
-                                <option value="mochilas">Mochilas</option>
-                                <option value="maletas">Maletas</option>
+                                <!-- Categories will be loaded dynamically -->
                             </select>
                         </div>
                         <div class="form-group">
@@ -268,6 +279,37 @@
                 <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
                 <button type="button" class="btn-danger" id="confirm-delete-btn">Eliminar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="category-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2 id="category-modal-title">Nueva Categoría</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="category-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="category-name">Nombre de la Categoría *</label>
+                        <input type="text" id="category-name" required placeholder="Ej: Accesorios">
+                    </div>
+                    <div class="form-group">
+                        <label for="category-active">Estado</label>
+                        <select id="category-active">
+                            <option value="true">Activa</option>
+                            <option value="false">Inactiva</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+                <input type="hidden" id="category-id">
+            </form>
         </div>
     </div>
 

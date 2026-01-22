@@ -89,9 +89,11 @@ const fallbackProductsData = [
 // Cart & History Management
 function openCart() {
     const sidebar = document.getElementById('cart-sidebar');
+    const overlay = document.getElementById('cart-overlay');
     // Ensure we don't push state if already open
     if (!sidebar.classList.contains('open')) {
         sidebar.classList.add('open');
+        if (overlay) overlay.classList.add('open');
         document.body.classList.add('no-scroll');
         // Push state so back button closes cart
         history.pushState({ modal: 'cart' }, '', '#cart');
@@ -111,7 +113,9 @@ function closeCart() {
 
 function closeCartUI() {
     const sidebar = document.getElementById('cart-sidebar');
+    const overlay = document.getElementById('cart-overlay');
     if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
     document.body.classList.remove('no-scroll');
 }
 
@@ -126,9 +130,51 @@ window.addEventListener('popstate', (event) => {
 
 // Active products data (loaded from API or fallback)
 let productsData = [];
+let categoriesData = [];
 
 // Cart State
 let cart = JSON.parse(localStorage.getItem('legado_cart')) || [];
+
+// Load categories from API
+async function loadCategoriesFromAPI() {
+    try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) throw new Error('Categories API not available');
+
+        const data = await response.json();
+        if (data && data.length > 0) {
+            categoriesData = data;
+            console.log('✅ Categories loaded from API:', categoriesData.length);
+            renderFilterButtons();
+        }
+    } catch (error) {
+        console.warn('⚠️ Could not load categories from API:', error.message);
+    }
+}
+
+// Render filter buttons dynamically
+function renderFilterButtons() {
+    const filterContainer = document.querySelector('.filter-buttons');
+    if (!filterContainer) return;
+
+    // Create "Todos" button + category buttons
+    filterContainer.innerHTML = `
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        ${categoriesData.map(cat => `
+            <button class="filter-btn" data-filter="${cat.slug}">${cat.name}</button>
+        `).join('')}
+    `;
+
+    // Re-attach event listeners
+    filterContainer.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filter = btn.getAttribute('data-filter');
+            renderProducts(filter);
+        });
+    });
+}
 
 // Load products from API
 async function loadProductsFromAPI() {
@@ -156,6 +202,7 @@ async function loadProductsFromAPI() {
 
 // Initialize Page
 document.addEventListener('DOMContentLoaded', () => {
+    loadCategoriesFromAPI(); // Load categories first
     loadProductsFromAPI();
     setupEventListeners();
 
@@ -180,14 +227,11 @@ function renderProducts(filter = 'all') {
     grid.innerHTML = filteredProducts.map(product => `
         <div class="product-card" data-category="${product.category}" data-id="${product.id}">
             ${product.badge ? `<div class="product-badge ${product.badge}">${product.badge === 'new' ? 'Nuevo' : 'Oferta'}</div>` : ''}
-            <div class="product-image">
+            <div class="product-image" onclick="openProductModal('${product.id}')" style="cursor: pointer;">
                 ${product.image
             ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">`
             : `<div class="placeholder-product" style="background: ${product.gradient};"><span>${product.name}</span></div>`
         }
-                <div class="product-overlay">
-                    <button class="quick-view" onclick="openProductModal('${product.id}')">Vista Rápida</button>
-                </div>
             </div>
             <div class="product-info">
                 <h3 class="product-name">${product.name}</h3>
@@ -222,6 +266,12 @@ function setupEventListeners() {
     const cartClose = document.getElementById('cart-close');
     if (cartClose) {
         cartClose.addEventListener('click', closeCart);
+    }
+
+    // Cart overlay click to close
+    const cartOverlay = document.getElementById('cart-overlay');
+    if (cartOverlay) {
+        cartOverlay.addEventListener('click', closeCart);
     }
 
     // Modal close
@@ -450,14 +500,24 @@ function addToCartFromModal() {
         // Get selected variant (Color)
         const selectedVariantBtn = document.querySelector('.variant-btn.active');
         let variant = null;
+        let variantImage = null;
         if (product.variants && product.variants.length > 0) {
             if (!selectedVariantBtn) {
                 // Default to first if none selected (though UI selects first by default)
                 variant = product.variants[0].name;
+                variantImage = product.variants[0].image;
             } else {
                 variant = selectedVariantBtn.dataset.variant;
+                // Find the variant object to get its image
+                const selectedVariant = product.variants.find(v => v.name === variant);
+                if (selectedVariant && selectedVariant.image) {
+                    variantImage = selectedVariant.image;
+                }
             }
         }
+
+        // Use variant image if available, otherwise use main product image
+        const cartImage = variantImage || product.image;
 
         const quantityInput = document.getElementById('quantity');
         const quantity = parseInt(quantityInput.value) || 1;
@@ -479,7 +539,7 @@ function addToCartFromModal() {
                 variant: variant, // Store the variant (color)
                 quantity: quantity,
                 gradient: product.gradient,
-                image: product.image // Use main image for cart thumbnail
+                image: cartImage // Use variant image if available
             });
         }
 
@@ -561,7 +621,7 @@ function updateCartUI() {
                 </div>
                 <div class="cart-item-details">
                     <div class="cart-item-name">${item.name}</div>
-                    <div class="cart-item-options">Talla: ${item.size}</div>
+                    <div class="cart-item-options">Talla: ${item.size}${item.variant ? ` | Color: ${item.variant}` : ''}</div>
                     <div class="cart-item-price">$${item.price.toLocaleString('es-MX')} MXN</div>
                     <div class="cart-item-quantity">
                         <button class="cart-qty-btn" onclick="updateCartItem(${index}, -1)">-</button>

@@ -98,6 +98,28 @@ router.get('/gallery', async (req, res) => {
 });
 
 // ============================================
+// PUBLIC CATEGORIES ROUTES
+// ============================================
+
+// GET /api/categories - Get all active categories (public)
+router.get('/categories', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('is_active', true)
+            .order('display_order', { ascending: true });
+
+        if (error) throw error;
+        res.json(data);
+
+    } catch (error) {
+        console.error('Get categories error:', error);
+        res.status(500).json({ error: 'Failed to fetch categories' });
+    }
+});
+
+// ============================================
 // PUBLIC SITE CONTENT ROUTES
 // ============================================
 

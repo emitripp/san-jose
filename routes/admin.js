@@ -472,6 +472,146 @@ router.delete('/gallery/:id', verifyAdmin, async (req, res) => {
 });
 
 // ============================================
+// CATEGORIES ROUTES
+// ============================================
+
+// GET /api/admin/categories - Get all categories
+router.get('/categories', verifyAdmin, async (req, res) => {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('categories')
+            .select('*')
+            .order('display_order', { ascending: true });
+
+        if (error) throw error;
+        res.json(data);
+
+    } catch (error) {
+        console.error('Get categories error:', error);
+        res.status(500).json({ error: 'Failed to fetch categories' });
+    }
+});
+
+// POST /api/admin/categories - Create new category
+router.post('/categories', verifyAdmin, async (req, res) => {
+    try {
+        const { name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ error: 'Name is required' });
+        }
+
+        // Generate slug from name
+        const slug = name.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove accents
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+
+        // Get max display_order
+        const { data: maxOrder } = await supabaseAdmin
+            .from('categories')
+            .select('display_order')
+            .order('display_order', { ascending: false })
+            .limit(1)
+            .single();
+
+        const newOrder = (maxOrder?.display_order || 0) + 1;
+
+        const { data, error } = await supabaseAdmin
+            .from('categories')
+            .insert({
+                name,
+                slug,
+                display_order: newOrder,
+                is_active: true
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.status(201).json(data);
+
+    } catch (error) {
+        console.error('Create category error:', error);
+        res.status(500).json({ error: 'Failed to create category' });
+    }
+});
+
+// PUT /api/admin/categories/:id - Update category
+router.put('/categories/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { name, is_active } = req.body;
+
+        const updateData = {};
+        if (name !== undefined) {
+            updateData.name = name;
+            // Update slug too
+            updateData.slug = name.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '');
+        }
+        if (is_active !== undefined) updateData.is_active = is_active;
+
+        const { data, error } = await supabaseAdmin
+            .from('categories')
+            .update(updateData)
+            .eq('id', req.params.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json(data);
+
+    } catch (error) {
+        console.error('Update category error:', error);
+        res.status(500).json({ error: 'Failed to update category' });
+    }
+});
+
+// DELETE /api/admin/categories/:id - Delete category
+router.delete('/categories/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { error } = await supabaseAdmin
+            .from('categories')
+            .delete()
+            .eq('id', req.params.id);
+
+        if (error) throw error;
+        res.json({ message: 'Category deleted successfully' });
+
+    } catch (error) {
+        console.error('Delete category error:', error);
+        res.status(500).json({ error: 'Failed to delete category' });
+    }
+});
+
+// PATCH /api/admin/categories-reorder - Reorder categories
+router.patch('/categories-reorder', verifyAdmin, async (req, res) => {
+    try {
+        const { orderedIds } = req.body;
+
+        if (!Array.isArray(orderedIds)) {
+            return res.status(400).json({ error: 'orderedIds must be an array' });
+        }
+
+        const updates = orderedIds.map((id, index) =>
+            supabaseAdmin
+                .from('categories')
+                .update({ display_order: index + 1 })
+                .eq('id', id)
+        );
+
+        await Promise.all(updates);
+        res.json({ message: 'Categories reordered successfully' });
+
+    } catch (error) {
+        console.error('Reorder categories error:', error);
+        res.status(500).json({ error: 'Failed to reorder categories' });
+    }
+});
+
+// ============================================
 // SITE CONTENT ROUTES
 // ============================================
 

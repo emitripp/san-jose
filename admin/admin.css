@@ -470,18 +470,26 @@ body {
     gap: 20px;
 }
 
-.gallery-item {
+#admin-gallery-grid .gallery-item {
     position: relative;
     border-radius: 12px;
     overflow: hidden;
     aspect-ratio: 4/3;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    cursor: default !important;
+    transform: none !important;
 }
 
-.gallery-item img {
+#admin-gallery-grid .gallery-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    cursor: default !important;
+}
+
+#admin-gallery-grid .gallery-item:hover {
+    cursor: default !important;
+    transform: none !important;
 }
 
 .gallery-item-overlay {
@@ -543,6 +551,87 @@ body {
 .content-section .btn-primary {
     width: auto;
     margin-top: 10px;
+}
+
+/* ============================================
+   CATEGORIES
+   ============================================ */
+
+.categories-list {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.categories-table {
+    width: 100%;
+}
+
+.categories-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 100px 120px;
+    gap: 15px;
+    padding: 15px;
+    background: var(--gray-light);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--brown);
+    margin-bottom: 10px;
+}
+
+.category-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 100px 120px;
+    gap: 15px;
+    padding: 15px;
+    border-bottom: 1px solid var(--gray-light);
+    align-items: center;
+}
+
+.category-row:last-child {
+    border-bottom: none;
+}
+
+.category-row:hover {
+    background: var(--gray-light);
+}
+
+.category-name {
+    font-weight: 600;
+    color: var(--gray-dark);
+}
+
+.category-slug {
+    color: var(--gray-mid);
+    font-family: monospace;
+    font-size: 13px;
+}
+
+.category-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.category-status.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.category-status.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.category-actions {
+    display: flex;
+    gap: 8px;
 }
 
 /* ============================================
@@ -750,13 +839,17 @@ body {
 }
 
 .variant-item {
+    padding: 15px;
+    background: var(--gray-light);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.variant-row {
     display: grid;
     grid-template-columns: 1fr 80px auto;
     gap: 10px;
     align-items: end;
-    padding: 15px;
-    background: var(--gray-light);
-    border-radius: 8px;
 }
 
 .variant-item .form-group {
@@ -780,6 +873,103 @@ body {
     border-radius: 8px;
     cursor: pointer;
     font-size: 18px;
+}
+
+/* Variant Image Styles */
+.variant-image-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #ddd;
+}
+
+.variant-image-section > label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-mid);
+    margin-bottom: 8px;
+}
+
+.variant-image-upload {
+    position: relative;
+}
+
+.variant-upload-placeholder {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.variant-upload-placeholder:hover {
+    border-color: var(--primary);
+}
+
+.variant-upload-placeholder span {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.variant-upload-placeholder p {
+    font-size: 12px;
+    color: var(--gray-mid);
+    margin: 0;
+}
+
+.variant-image-preview-container {
+    position: relative;
+    display: inline-block;
+}
+
+.variant-image-preview {
+    max-width: 150px;
+    max-height: 100px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid #e0e0e0;
+}
+
+.variant-image-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.btn-change-image,
+.btn-remove-image {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.btn-change-image {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.btn-change-image:hover {
+    background: var(--primary-dark);
+}
+
+.btn-remove-image {
+    background: #e0e0e0;
+    color: var(--gray-dark);
+}
+
+.btn-remove-image:hover {
+    background: var(--danger);
+    color: var(--white);
+}
+
+.hidden {
+    display: none !important;
 }
 
 /* ============================================
