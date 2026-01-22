@@ -200,11 +200,21 @@ async function loadProductsFromAPI() {
     preloadImages();
 }
 
+// Reset checkout button to default state
+function resetCheckoutButton() {
+    const checkoutBtn = document.getElementById('checkout-btn');
+    if (checkoutBtn) {
+        checkoutBtn.textContent = 'Proceder al Pago';
+        checkoutBtn.disabled = false;
+    }
+}
+
 // Initialize Page
 document.addEventListener('DOMContentLoaded', () => {
     loadCategoriesFromAPI(); // Load categories first
     loadProductsFromAPI();
     setupEventListeners();
+    resetCheckoutButton(); // Reset button on page load
 
     // Escuchar mensaje de limpieza de carrito desde la página de éxito
     window.addEventListener('message', (event) => {
@@ -214,6 +224,14 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCartUI();
         }
     });
+});
+
+// Reset checkout button when user navigates back (from Stripe or browser back button)
+window.addEventListener('pageshow', (event) => {
+    // event.persisted is true when page is loaded from bfcache (back-forward cache)
+    if (event.persisted) {
+        resetCheckoutButton();
+    }
 });
 
 
