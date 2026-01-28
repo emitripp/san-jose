@@ -12,7 +12,7 @@ async function createAdminHash() {
     console.log('ADMIN SETUP');
     console.log('========================================\n');
     console.log('Default Admin Credentials:');
-    console.log('  Email: admin@legadosanjose.com');
+    console.log('  Email: legadosanjosemx@gmail.com');
     console.log('  Password: admin123');
     console.log('\n⚠️  IMPORTANT: Change this password after first login!\n');
     console.log('Password Hash (for Supabase):');
@@ -22,7 +22,7 @@ async function createAdminHash() {
     console.log(`
 INSERT INTO admins (email, password_hash, name)
 VALUES (
-    'admin@legadosanjose.com',
+    'legadosanjosemx@gmail.com',
     '${hash}',
     'Administrador'
 ) ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash;

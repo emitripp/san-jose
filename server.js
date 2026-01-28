@@ -5,39 +5,100 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static('.'));
-
-// Serve admin folder as static
-app.use('/admin', express.static('admin'));
-
-// Google Generative AI Setup
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 
-// Import API Routes
+// Import API and Database
 const { supabaseAdmin } = require('./lib/supabase');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 
-// Use API Routes
-app.use('/api/admin', adminRoutes);
-app.use('/api', publicRoutes);
-
-// Configure Multer for memory storage
-const upload = multer({ storage: multer.memoryStorage() });
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-3-pro-image-preview' });
+
+// Configure Multer for memory storage
+const upload = multer({ storage: multer.memoryStorage() });
+
+// --- Maintenance Mode Middleware ---
+let maintenanceMode = false;
+let lastCheck = 0;
+const CACHE_TTL = 5000; // 5 seconds for better responsiveness during setup
+
+async function checkMaintenanceStatus() {
+    const now = Date.now();
+    if (now - lastCheck < CACHE_TTL) return maintenanceMode;
+
+    try {
+        if (supabaseAdmin) {
+            const { data, error } = await supabaseAdmin
+                .from('site_content')
+                .select('content')
+                .eq('section', 'settings')
+                .eq('key', 'maintenance_mode')
+                .single();
+
+            if (!error && data) {
+                maintenanceMode = data.content === 'true';
+            } else if (error && error.code === 'PGRST116') {
+                console.log('Maintenance mode setting not found, initializing...');
+                await supabaseAdmin
+                    .from('site_content')
+                    .insert({ section: 'settings', key: 'maintenance_mode', content: 'false' });
+                maintenanceMode = false;
+            }
+        }
+    } catch (err) {
+        console.error('Error checking maintenance status:', err);
+    }
+
+    lastCheck = now;
+    return maintenanceMode;
+}
+
+app.use(async (req, res, next) => {
+    // Skip logical check for admin, webhooks and API
+    const isExcluded =
+        req.path.startsWith('/admin') ||
+        req.path.startsWith('/api/') ||
+        req.path.startsWith('/webhook') ||
+        req.path === '/maintenance.html' ||
+        req.path.includes('favicon') ||
+        req.path.includes('.png') ||
+        req.path.includes('.jpg') ||
+        req.path.includes('.css') ||
+        req.path.includes('.js');
+
+    if (isExcluded) return next();
+
+    const isMaintenance = await checkMaintenanceStatus();
+    if (isMaintenance) {
+        // If it's a page request (no extension or .html), show maintenance
+        const isPageRequest = !req.path.includes('.') || req.path.endsWith('.html');
+        if (isPageRequest) {
+            return res.sendFile(path.join(__dirname, 'maintenance.html'));
+        }
+    }
+    next();
+});
+// -----------------------------------
+
+// General Middleware
+app.use(cors());
+app.use(express.json());
+
+// Main Static delivery
+app.use(express.static('.'));
+app.use('/admin', express.static('admin'));
+
+// API Routes
+app.use('/api/admin', adminRoutes);
+app.use('/api', publicRoutes);
 
 
 // Endpoint for Virtual Try-On

@@ -84,6 +84,12 @@ function setupEventListeners() {
     // Image upload handlers
     document.getElementById('main-image-input').addEventListener('change', handleMainImageUpload);
     document.getElementById('gallery-image-input').addEventListener('change', handleGalleryImageUpload);
+
+    // Maintenance toggle
+    const maintenanceToggle = document.getElementById('maintenance-toggle');
+    if (maintenanceToggle) {
+        maintenanceToggle.addEventListener('change', handleMaintenanceToggle);
+    }
 }
 
 // ============================================
@@ -169,6 +175,7 @@ function showDashboard(admin) {
     loadProducts();
     loadGallery();
     loadContent();
+    loadSettings();
 }
 
 async function handlePasswordChange(e) {
@@ -1149,6 +1156,67 @@ async function deleteCategory(id) {
 // Make category functions globally available
 window.editCategory = editCategory;
 window.confirmDeleteCategory = confirmDeleteCategory;
+
+// ============================================
+// SETTINGS
+// ============================================
+
+async function loadSettings() {
+    try {
+        const response = await fetch(`${API_BASE}/content`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load settings');
+
+        const content = await response.json();
+        const maintenanceSetting = content.find(item => item.section === 'settings' && item.key === 'maintenance_mode');
+
+        if (maintenanceSetting) {
+            const toggle = document.getElementById('maintenance-toggle');
+            const statusText = document.getElementById('maintenance-status');
+            const isActive = maintenanceSetting.content === 'true';
+
+            if (toggle) toggle.checked = isActive;
+            if (statusText) {
+                statusText.textContent = isActive ? 'Modo Mantenimiento Activado' : 'Modo Mantenimiento Desactivado';
+                statusText.style.color = isActive ? 'var(--danger)' : 'var(--gray-mid)';
+            }
+        }
+    } catch (error) {
+        console.error('Load settings error:', error);
+    }
+}
+
+async function handleMaintenanceToggle(e) {
+    const isChecked = e.target.checked;
+    const statusText = document.getElementById('maintenance-status');
+
+    try {
+        const response = await fetch(`${API_BASE}/content/settings/maintenance_mode`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ content: isChecked ? 'true' : 'false' })
+        });
+
+        if (!response.ok) throw new Error('Failed to update maintenance mode');
+
+        if (statusText) {
+            statusText.textContent = isChecked ? 'Modo Mantenimiento Activado' : 'Modo Mantenimiento Desactivado';
+            statusText.style.color = isChecked ? 'var(--danger)' : 'var(--gray-mid)';
+        }
+
+        showToast(isChecked ? 'Modo mantenimiento activado' : 'Modo mantenimiento desactivado', isChecked ? 'warning' : 'success');
+
+    } catch (error) {
+        console.error('Update maintenance error:', error);
+        showToast('Error al actualizar modo mantenimiento', 'error');
+        e.target.checked = !isChecked; // Revert toggle
+    }
+}
 
 // ============================================
 // UTILITIES

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,15 +9,16 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-JT5P73Z3EV"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-JT5P73Z3EV');
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-JT5P73Z3EV');
     </script>
 
     <link rel="stylesheet" href="admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <!-- Login Screen -->
     <div id="login-screen" class="login-container">
@@ -28,7 +30,7 @@
             <form id="login-form">
                 <div class="form-group">
                     <label for="email">Correo Electrónico</label>
-                    <input type="email" id="email" required placeholder="admin@legadosanjose.com">
+                    <input type="email" id="email" required placeholder="admin@gmail.com">
                 </div>
                 <div class="form-group">
                     <label for="password">Contraseña</label>
@@ -68,7 +70,7 @@
             <div class="sidebar-footer">
                 <div class="admin-info">
                     <span id="admin-name">Admin</span>
-                    <small id="admin-email">admin@legadosanjose.com</small>
+                    <small id="admin-email">admin@gmail.com</small>
                 </div>
                 <button id="logout-btn" class="btn-logout">Cerrar Sesión</button>
             </div>
@@ -125,6 +127,19 @@
                     <h1>Configuración</h1>
                 </div>
                 <div class="settings-content">
+                    <div class="settings-card">
+                        <h3>Estado del Sitio</h3>
+                        <p class="settings-desc">Paura el sitio y muestra una página de "En Construcción" a los
+                            visitantes.</p>
+                        <div class="toggle-container">
+                            <label class="switch">
+                                <input type="checkbox" id="maintenance-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                            <span id="maintenance-status">Modo Mantenimiento Desactivado</span>
+                        </div>
+                    </div>
+
                     <div class="settings-card">
                         <h3>Cambiar Contraseña</h3>
                         <form id="change-password-form">
@@ -193,7 +208,8 @@
                         <label>Imagen Principal</label>
                         <div class="image-upload-area" id="main-image-upload">
                             <input type="file" id="main-image-input" accept="image/*" style="display: none;">
-                            <div class="upload-placeholder" onclick="document.getElementById('main-image-input').click()">
+                            <div class="upload-placeholder"
+                                onclick="document.getElementById('main-image-input').click()">
                                 <span>📷</span>
                                 <p>Click para subir imagen</p>
                             </div>
@@ -206,7 +222,8 @@
                         <div class="additional-images" id="additional-images">
                             <!-- Additional images will be added here -->
                         </div>
-                        <button type="button" class="btn-secondary" onclick="addAdditionalImage()">+ Agregar Imagen</button>
+                        <button type="button" class="btn-secondary" onclick="addAdditionalImage()">+ Agregar
+                            Imagen</button>
                     </div>
                     <div class="form-group">
                         <label for="product-sizes">Tallas (separadas por coma)</label>
@@ -243,7 +260,8 @@
                         <label>Imagen</label>
                         <div class="image-upload-area" id="gallery-image-upload">
                             <input type="file" id="gallery-image-input" accept="image/*" style="display: none;">
-                            <div class="upload-placeholder" onclick="document.getElementById('gallery-image-input').click()">
+                            <div class="upload-placeholder"
+                                onclick="document.getElementById('gallery-image-input').click()">
                                 <span>📷</span>
                                 <p>Click para subir imagen</p>
                             </div>
@@ -318,4 +336,5 @@
 
     <script src="admin.js"></script>
 </body>
+
 </html>

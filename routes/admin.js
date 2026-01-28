@@ -643,9 +643,13 @@ router.put('/content/:section/:key', verifyAdmin, async (req, res) => {
 
         const { data, error } = await supabaseAdmin
             .from('site_content')
-            .update(updateData)
-            .eq('section', req.params.section)
-            .eq('key', req.params.key)
+            .upsert({
+                section: req.params.section,
+                key: req.params.key,
+                ...updateData
+            }, {
+                onConflict: 'section,key'
+            })
             .select()
             .single();
 

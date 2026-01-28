@@ -120,7 +120,7 @@ CREATE INDEX IF NOT EXISTS idx_site_content_section ON site_content(section);
 -- El usuario DEBE cambiar esto después del primer login
 INSERT INTO admins (email, password_hash, name)
 VALUES (
-    'admin@legadosanjose.com',
+    'legadosanjosemx@gmail.com',
     '$2b$10$rOzJqQZQZQZQZQZQZQZQZOC8K8K8K8K8K8K8K8K8K8K8K8K8K8K8K',
     'Administrador'
 ) ON CONFLICT (email) DO NOTHING;
