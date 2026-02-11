@@ -634,6 +634,38 @@ body {
     color: #991b1b;
 }
 
+/* Discount codes table */
+.discounts-header {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr 0.6fr 1fr 0.7fr 1.2fr;
+    gap: 15px;
+    padding: 15px;
+    background: var(--gray-light);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--brown);
+    margin-bottom: 10px;
+}
+
+.discount-row {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr 0.6fr 1fr 0.7fr 1.2fr;
+    gap: 15px;
+    padding: 15px;
+    border-bottom: 1px solid var(--gray-light);
+    align-items: center;
+}
+
+.discount-row:last-child {
+    border-bottom: none;
+}
+
+.discount-row:hover {
+    background: var(--gray-light);
+}
+
 .category-actions {
     display: flex;
     gap: 8px;

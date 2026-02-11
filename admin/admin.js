@@ -1565,6 +1565,8 @@ async function loadOrders() {
 
     } catch (error) {
         console.error('Load orders error:', error);
+        currentOrders = [];
+        renderOrders();
     }
 }
 
@@ -1606,15 +1608,17 @@ function renderOrders() {
             ${currentOrders.map(order => {
                 const status = order.status || 'pendiente';
                 const customer = order.customer || {};
-                const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-MX') : 'N/A';
+                const date = order.created_at ? new Date(order.created_at).toLocaleDateString('es-MX') : 'N/A';
+                const totalDisplay = (order.total || 0) / 100;
+                const orderNum = order.order_number ? `LSJ-${String(order.order_number).padStart(5, '0')}` : order.id.substring(0, 8);
                 return `
                 <div class="order-row" data-id="${order.id}">
-                    <span class="order-id">${order.id}</span>
+                    <span class="order-id" style="font-weight: 600; font-family: monospace;">${orderNum}</span>
                     <span class="order-customer">
                         <strong>${customer.name || 'N/A'}</strong><br>
                         <small>${customer.email || ''}</small>
                     </span>
-                    <span class="order-total">$${(order.total || 0).toLocaleString('es-MX')} MXN</span>
+                    <span class="order-total">$${totalDisplay.toLocaleString('es-MX')} MXN</span>
                     <span>
                         <select class="order-status-select" data-order-id="${order.id}" style="border: 2px solid ${statusColors[status] || '#ccc'}; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; color: ${statusColors[status] || '#333'};">
                             ${['pagado', 'procesado', 'enviado', 'entregado'].map(s =>
@@ -1675,22 +1679,35 @@ function viewOrderDetails(orderId) {
         addressStr = `${address.line1}${address.line2 ? ', ' + address.line2 : ''}, ${address.city || ''}, ${address.state || ''} ${address.postal_code || ''}`;
     }
 
+    const shippingDisplay = (order.shipping || 0) / 100;
+    const totalDisplay = (order.total || 0) / 100;
+    const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+    const detailOrderNum = order.order_number ? `LSJ-${String(order.order_number).padStart(5, '0')}` : order.id;
+
     const detailsHtml = `
         <div style="max-width: 500px;">
-            <h3 style="margin-bottom: 16px;">Pedido ${order.id}</h3>
+            <h3 style="margin-bottom: 16px;">Pedido ${detailOrderNum}</h3>
+            ${dateStr ? `<p style="color: #888; font-size: 0.85rem;">${dateStr}</p>` : ''}
+            <hr style="margin: 12px 0;">
             <p><strong>Cliente:</strong> ${customer.name || 'N/A'}</p>
             <p><strong>Email:</strong> ${customer.email || 'N/A'}</p>
+            ${customer.phone ? `<p><strong>Teléfono:</strong> ${customer.phone}</p>` : ''}
+            ${customer.rfc ? `<p><strong>RFC:</strong> ${customer.rfc}</p>` : ''}
             ${addressStr ? `<p><strong>Dirección:</strong> ${addressStr}</p>` : ''}
             <p><strong>Estado:</strong> ${(order.status || 'pendiente').toUpperCase()}</p>
-            ${order.trackingNumber ? `<p><strong>Rastreo:</strong> ${order.trackingNumber}</p>` : ''}
+            ${order.tracking_number ? `<p><strong>Rastreo:</strong> ${order.tracking_number}</p>` : ''}
             <hr style="margin: 12px 0;">
             <p><strong>Productos:</strong></p>
             <ul style="margin: 8px 0; padding-left: 20px;">
-                ${items.map(item => `<li>${item.name}${item.size ? ' ('+item.size+')' : ''} x${item.quantity} — $${(item.price || 0).toLocaleString('es-MX')}</li>`).join('')}
+                ${items.map(item => {
+                    const details = [item.size ? `Talla: ${item.size}` : '', item.variant ? `Color: ${item.variant}` : ''].filter(Boolean).join(', ');
+                    return `<li>${item.name}${details ? ' (' + details + ')' : ''} x${item.quantity} — $${(item.price || 0).toLocaleString('es-MX')}</li>`;
+                }).join('')}
             </ul>
             <hr style="margin: 12px 0;">
-            <p><strong>Envío:</strong> $${(order.shipping || 0).toLocaleString('es-MX')} MXN</p>
-            <p style="font-size: 1.1rem;"><strong>Total: $${(order.total || 0).toLocaleString('es-MX')} MXN</strong></p>
+            <p><strong>Envío:</strong> $${shippingDisplay.toLocaleString('es-MX')} MXN</p>
+            <p style="font-size: 1.1rem;"><strong>Total: $${totalDisplay.toLocaleString('es-MX')} MXN</strong></p>
         </div>
     `;
 
@@ -1740,7 +1757,7 @@ function renderDiscountCodes() {
 
     list.innerHTML = `
         <div class="categories-table">
-            <div class="categories-header">
+            <div class="discounts-header">
                 <span>Código</span>
                 <span>Descuento</span>
                 <span>Usos</span>
@@ -1762,18 +1779,17 @@ function renderDiscountCodes() {
                     ? new Date(promo.expires_at * 1000).toLocaleDateString('es-MX')
                     : 'Sin expiración';
                 return `
-                <div class="category-row">
+                <div class="discount-row">
                     <span style="font-weight: 600; font-family: monospace; font-size: 1rem;">${promo.code}</span>
                     <span>${discount}</span>
                     <span>${uses}</span>
                     <span>${expires}</span>
-                    <span class="category-status ${promo.active ? 'active' : 'inactive'}">
-                        ${promo.active ? 'Activo' : 'Inactivo'}
-                    </span>
-                    <span>
+                    <span><span class="category-status ${promo.active ? 'active' : 'inactive'}">${promo.active ? 'Activo' : 'Inactivo'}</span></span>
+                    <span style="display: flex; gap: 6px;">
                         <button class="btn-edit-sm" onclick="toggleDiscountCode('${promo.id}', ${!promo.active})">
                             ${promo.active ? 'Desactivar' : 'Activar'}
                         </button>
+                        <button class="btn-delete-sm" onclick="deleteDiscountCode('${promo.id}', '${promo.code}')">Eliminar</button>
                     </span>
                 </div>
             `}).join('')}
@@ -1843,6 +1859,25 @@ async function toggleDiscountCode(id, active) {
         console.error('Toggle discount code error:', error);
         showToast('Error al actualizar código', 'error');
     }
+}
+
+function deleteDiscountCode(id, code) {
+    showConfirmModal('Eliminar Código', `¿Eliminar el código "${code}"? Esto también eliminará el cupón asociado en Stripe.`, 'Eliminar', async () => {
+        try {
+            const response = await fetch(`${API_BASE}/discount-codes/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+
+            if (!response.ok) throw new Error('Failed to delete');
+
+            showToast('Código eliminado', 'success');
+            loadDiscountCodes();
+        } catch (error) {
+            console.error('Delete discount code error:', error);
+            showToast('Error al eliminar código', 'error');
+        }
+    });
 }
 
 // ============================================

@@ -699,7 +699,14 @@ router.get('/discount-codes', verifyAdmin, async (req, res) => {
             limit: 50,
             expand: ['data.coupon']
         });
-        res.json(promotionCodes.data);
+        // Filter out codes whose coupon was deleted or invalidated
+        const validCodes = promotionCodes.data.filter(promo => {
+            if (!promo.coupon) return false;
+            if (promo.coupon.deleted) return false;
+            if (!promo.active && promo.coupon.valid === false) return false;
+            return true;
+        });
+        res.json(validCodes);
     } catch (error) {
         console.error('Get discount codes error:', error);
         res.status(500).json({ error: 'Failed to fetch discount codes' });
@@ -750,7 +757,40 @@ router.patch('/discount-codes/:id', verifyAdmin, async (req, res) => {
         res.json(promotionCode);
     } catch (error) {
         console.error('Update discount code error:', error);
-        res.status(500).json({ error: 'Failed to update discount code' });
+        res.status(500).json({ error: error.message || 'Failed to update discount code' });
+    }
+});
+
+// DELETE /api/admin/discount-codes/:id - Delete promotion code and its coupon
+router.delete('/discount-codes/:id', verifyAdmin, async (req, res) => {
+    try {
+        let couponId = null;
+
+        // Try to retrieve the promotion code
+        try {
+            const promo = await stripe.promotionCodes.retrieve(req.params.id);
+            couponId = promo.coupon?.id;
+            // Deactivate the promotion code (Stripe doesn't allow true deletion)
+            await stripe.promotionCodes.update(req.params.id, { active: false });
+        } catch (e) {
+            // Promotion code may already be invalid, continue
+            console.log('Promo code already invalid:', e.message);
+        }
+
+        // Try to delete the coupon if it exists
+        if (couponId) {
+            try {
+                await stripe.coupons.del(couponId);
+            } catch (e) {
+                // Coupon may already be deleted, that's fine
+                console.log('Coupon already deleted:', e.message);
+            }
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Delete discount code error:', error);
+        res.status(500).json({ error: error.message || 'Failed to delete discount code' });
     }
 });
 
@@ -873,7 +913,7 @@ router.get('/orders', verifyAdmin, async (req, res) => {
         const { data, error } = await supabaseAdmin
             .from('orders')
             .select('*')
-            .order('createdAt', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (error) throw error;
         res.json(data);
@@ -900,7 +940,7 @@ router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
 
         const updateData = { status };
         if (trackingNumber) {
-            updateData.trackingNumber = trackingNumber;
+            updateData.tracking_number = trackingNumber;
         }
 
         const { data, error } = await supabaseAdmin

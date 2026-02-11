@@ -256,7 +256,7 @@
                     <div>
                         <div style="font-weight: 600; color: var(--brown);">${item.name}</div>
                         <div style="font-size: 14px; color: var(--gray-mid); margin-top: 4px;">
-                            Talla: ${item.size} | Cantidad: ${item.quantity}
+                            ${item.size ? 'Talla: ' + item.size : ''}${item.variant ? ' | Color: ' + item.variant : ''} | Cantidad: ${item.quantity}
                         </div>
                     </div>
                     <div style="font-weight: 700; color: var(--primary);">

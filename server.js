@@ -314,19 +314,24 @@ app.post('/create-checkout-session', async (req, res) => {
             ];
         }
 
-        const lineItems = finalItems.map(item => ({
-            price_data: {
-                currency: 'mxn',
-                product_data: {
-                    name: item.name,
-                    metadata: {
-                        size: item.size
-                    }
+        const lineItems = finalItems.map(item => {
+            const description = [item.size ? `Talla: ${item.size}` : '', item.variant ? `Color: ${item.variant}` : ''].filter(Boolean).join(' | ');
+            return {
+                price_data: {
+                    currency: 'mxn',
+                    product_data: {
+                        name: item.name,
+                        ...(description && { description }),
+                        metadata: {
+                            size: item.size || '',
+                            variant: item.variant || ''
+                        }
+                    },
+                    unit_amount: item.price * 100, // Stripe espera centavos
                 },
-                unit_amount: item.price * 100, // Stripe espera centavos
-            },
-            quantity: item.quantity,
-        }));
+                quantity: item.quantity,
+            };
+        });
 
         // Crear sesión de Stripe Checkout
         const session = await stripe.checkout.sessions.create({
@@ -342,6 +347,14 @@ app.post('/create-checkout-session', async (req, res) => {
             phone_number_collection: {
                 enabled: true,
             },
+            custom_fields: [
+                {
+                    key: 'rfc',
+                    label: { type: 'custom', custom: 'RFC (opcional, para facturación)' },
+                    type: 'text',
+                    optional: true,
+                }
+            ],
             shipping_options: shippingOptions,
             metadata: {
                 items: JSON.stringify(items)
@@ -392,44 +405,74 @@ app.get('/verify-session/:sessionId', async (req, res) => {
         console.log('Session retrieved:', session.payment_status);
 
         if (session.payment_status === 'paid') {
-            // Guardar pedido
-            const order = {
-                id: `ORD-${Date.now()}`,
-                sessionId: req.params.sessionId,
+            // Extraer RFC de custom_fields
+            const rfcField = session.custom_fields?.find(f => f.key === 'rfc');
+            const rfc = rfcField?.text?.value || '';
+
+            const items = session.metadata?.items ? JSON.parse(session.metadata.items) : [];
+            const totalCents = session.amount_total || 0;
+            const shippingCents = session.total_details?.amount_shipping || 0;
+            const subtotalCents = totalCents - shippingCents;
+
+            // Guardar pedido (campos coinciden con schema de DB)
+            const orderData = {
+                stripe_session_id: req.params.sessionId,
                 customer: {
                     email: session.customer_details?.email || 'No disponible',
                     name: session.customer_details?.name || 'Cliente',
+                    phone: session.customer_details?.phone || '',
+                    rfc: rfc,
                     address: session.shipping_details?.address || session.customer_details?.address || {}
                 },
-                items: session.metadata?.items ? JSON.parse(session.metadata.items) : [],
-                total: session.amount_total / 100,
-                shipping: session.total_details?.amount_shipping ? session.total_details.amount_shipping / 100 : 0,
-                status: 'pagado',
-                createdAt: new Date(),
-                paid: true
+                items: items,
+                subtotal: subtotalCents,
+                shipping: shippingCents,
+                total: totalCents,
+                status: 'pagado'
             };
 
-            // Save to Supabase
+            // Save to Supabase (upsert para no duplicar si webhook ya lo creó)
+            let savedOrder = null;
             if (supabaseAdmin) {
-                const { error: dbError } = await supabaseAdmin
+                const { data: existing } = await supabaseAdmin
                     .from('orders')
-                    .insert(order);
+                    .select('id, order_number')
+                    .eq('stripe_session_id', req.params.sessionId)
+                    .single();
 
-                if (dbError) {
-                    console.error('Error saving order to Supabase:', dbError);
-                    // Don't fail the request, just log it. The user still paid.
+                if (existing) {
+                    savedOrder = existing;
+                    console.log('Order already exists (created by webhook):', existing.id);
                 } else {
-                    console.log('Order saved to Supabase:', order.id);
+                    const { data, error: dbError } = await supabaseAdmin
+                        .from('orders')
+                        .insert(orderData)
+                        .select()
+                        .single();
+
+                    if (dbError) {
+                        console.error('Error saving order to Supabase:', dbError);
+                    } else {
+                        savedOrder = data;
+                        console.log('Order saved to Supabase:', data.id);
+                    }
                 }
-            } else {
-                console.warn('Supabase not configured, order not saved to DB');
             }
 
-            console.log('Order created:', order.id);
+            const orderNumber = savedOrder?.order_number
+                ? `LSJ-${String(savedOrder.order_number).padStart(5, '0')}`
+                : savedOrder?.id || 'N/A';
 
             res.json({
                 success: true,
-                order: order
+                order: {
+                    id: orderNumber,
+                    customer: orderData.customer,
+                    items: items,
+                    total: totalCents / 100,
+                    shipping: shippingCents / 100,
+                    status: 'pagado'
+                }
             });
         } else {
             res.json({
@@ -464,16 +507,67 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
     // Manejar eventos de Stripe
     switch (event.type) {
-        case 'checkout.session.completed':
+        case 'checkout.session.completed': {
             const session = event.data.object;
             console.log('Pago completado:', session.id);
 
-            // Decrementar inventario
+            // Retrieve full session data
+            const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+                expand: ['line_items']
+            });
+
+            const items = session.metadata?.items ? JSON.parse(session.metadata.items) : [];
+            const totalCents = fullSession.amount_total || 0;
+            const shippingCents = fullSession.total_details?.amount_shipping || 0;
+            const subtotalCents = totalCents - shippingCents;
+
+            // Extraer RFC de custom_fields
+            const webhookRfcField = fullSession.custom_fields?.find(f => f.key === 'rfc');
+            const webhookRfc = webhookRfcField?.text?.value || '';
+
+            const customerData = {
+                email: fullSession.customer_details?.email || 'No disponible',
+                name: fullSession.customer_details?.name || 'Cliente',
+                phone: fullSession.customer_details?.phone || '',
+                rfc: webhookRfc,
+                address: fullSession.shipping_details?.address || {}
+            };
+
+            // 1. Guardar pedido en Supabase
+            let savedOrderId = null;
+            let savedOrderNumber = null;
             try {
-                if (supabaseAdmin && session.metadata?.items) {
-                    const purchasedItems = JSON.parse(session.metadata.items);
-                    for (const item of purchasedItems) {
-                        // Find product by name and decrement stock
+                if (supabaseAdmin) {
+                    const { data, error: dbError } = await supabaseAdmin
+                        .from('orders')
+                        .insert({
+                            stripe_session_id: session.id,
+                            customer: customerData,
+                            items: items,
+                            subtotal: subtotalCents,
+                            shipping: shippingCents,
+                            total: totalCents,
+                            status: 'pagado'
+                        })
+                        .select('id, order_number')
+                        .single();
+
+                    if (dbError) {
+                        console.error('Error saving order to Supabase:', dbError);
+                    } else {
+                        savedOrderId = data.id;
+                        savedOrderNumber = data.order_number;
+                        console.log('Order saved to Supabase:', savedOrderId, 'Number:', savedOrderNumber);
+                    }
+                }
+            } catch (orderError) {
+                console.error('Error creating order:', orderError);
+            }
+
+            // 2. Decrementar inventario
+            try {
+                if (supabaseAdmin) {
+                    for (const item of items) {
                         const { data: product } = await supabaseAdmin
                             .from('products')
                             .select('id, stock')
@@ -494,23 +588,18 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                 console.error('Error actualizando inventario:', stockError);
             }
 
-            // Enviar emails de confirmación
+            // 3. Enviar emails de confirmación
             try {
                 const { sendOrderConfirmation, sendOrderNotification } = require('./lib/email');
-                const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
-                    expand: ['line_items']
-                });
-
+                const emailOrderNumber = savedOrderNumber
+                    ? `LSJ-${String(savedOrderNumber).padStart(5, '0')}`
+                    : savedOrderId || `ORD-${Date.now()}`;
                 const orderForEmail = {
-                    id: `ORD-${Date.now()}`,
-                    customer: {
-                        email: fullSession.customer_details?.email,
-                        name: fullSession.customer_details?.name,
-                        address: fullSession.shipping_details?.address || {}
-                    },
-                    items: session.metadata?.items ? JSON.parse(session.metadata.items) : [],
-                    total: fullSession.amount_total / 100,
-                    shipping: fullSession.total_details?.amount_shipping ? fullSession.total_details.amount_shipping / 100 : 0
+                    id: emailOrderNumber,
+                    customer: customerData,
+                    items: items,
+                    total: totalCents / 100,
+                    shipping: shippingCents / 100
                 };
 
                 await sendOrderConfirmation(orderForEmail);
@@ -520,6 +609,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                 console.error('Error enviando emails:', emailError);
             }
             break;
+        }
 
         case 'payment_intent.succeeded':
             console.log('PaymentIntent exitoso');

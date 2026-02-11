@@ -686,7 +686,8 @@ async function createStripeCheckoutSession() {
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
-                    size: item.size
+                    size: item.size,
+                    variant: item.variant || null
                 })),
                 pickupCode: document.getElementById('internal-code')?.value.trim()
             })
