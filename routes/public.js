@@ -29,9 +29,11 @@ router.get('/products', async (req, res) => {
             images: p.images || [],
             gradient: p.gradient,
             sizes: p.sizes || [],
-            variants: p.variants || []
+            variants: p.variants || [],
+            stock: p.stock
         }));
 
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
         res.json(products);
 
     } catch (error) {
@@ -170,6 +172,50 @@ router.get('/content/:section', async (req, res) => {
     } catch (error) {
         console.error('Get content error:', error);
         res.status(500).json({ error: 'Failed to fetch content' });
+    }
+});
+
+// ============================================
+// PUBLIC PAGES ROUTES
+// ============================================
+
+// GET /api/pages - Get all active pages (for footer menu)
+router.get('/pages', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('pages')
+            .select('title, slug')
+            .eq('is_active', true)
+            .order('display_order', { ascending: true });
+
+        if (error) throw error;
+        res.json(data || []);
+
+    } catch (error) {
+        console.error('Get pages error:', error);
+        res.json([]); // Return empty array on error so footer doesn't break
+    }
+});
+
+// GET /api/pages/:slug - Get single page content (public)
+router.get('/pages/:slug', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('pages')
+            .select('*')
+            .eq('slug', req.params.slug)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !data) {
+            return res.status(404).json({ error: 'Página no encontrada' });
+        }
+
+        res.json(data);
+
+    } catch (error) {
+        console.error('Get page error:', error);
+        res.status(500).json({ error: 'Failed to fetch page' });
     }
 });
 

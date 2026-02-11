@@ -52,6 +52,24 @@
     background: #e74c3c;
 }
 
+.product-badge.stock-out {
+    background: #e74c3c;
+    z-index: 2;
+}
+
+.product-badge.stock-low {
+    background: #f39c12;
+    z-index: 2;
+    top: auto;
+    bottom: 15px;
+    left: 15px;
+    font-size: 0.7rem;
+}
+
+.product-card.out-of-stock {
+    opacity: 0.7;
+}
+
 .buy-now-btn {
     width: 100%;
     padding: 15px;

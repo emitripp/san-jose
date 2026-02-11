@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legado San José</title>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JT5P73Z3EV"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-JT5P73Z3EV');
+    </script>
+
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Hero Banner */
+        .page-hero {
+            background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+            padding: 60px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23F5A84F' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .page-hero h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #F5A84F;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-hero-logo {
+            position: absolute;
+            top: 20px;
+            left: 24px;
+            font-family: 'Rawgly', 'Montserrat', sans-serif;
+            font-size: 1.3rem;
+            font-weight: normal;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            z-index: 2;
+            transition: color 0.3s;
+        }
+
+        .page-hero-logo:hover {
+            color: #F5A84F;
+        }
+
+        .page-hero .hero-line {
+            width: 60px;
+            height: 3px;
+            background: #F5A84F;
+            margin: 20px auto 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Content */
+        .page-content-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 50px 20px 80px;
+            min-height: 40vh;
+        }
+
+        .page-body {
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.9;
+            color: #444;
+            font-size: 1rem;
+        }
+
+        .page-body h1 {
+            display: none; /* Hidden — title shown in hero */
+        }
+
+        .page-body h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #F5A84F;
+            display: inline-block;
+        }
+
+        .page-body h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 28px;
+            margin-bottom: 8px;
+            color: #1a1a1a;
+        }
+
+        .page-body p {
+            margin-bottom: 16px;
+        }
+
+        .page-body ul,
+        .page-body ol {
+            margin-bottom: 20px;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .page-body li {
+            margin-bottom: 10px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .page-body li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 8px;
+            height: 8px;
+            background: #F5A84F;
+            border-radius: 50%;
+        }
+
+        .page-body a {
+            color: #F5A84F;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .page-body a:hover {
+            color: #d4872e;
+        }
+
+        /* Back button */
+        .page-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #999;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 30px;
+            transition: color 0.3s;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .page-back:hover {
+            color: #F5A84F;
+        }
+
+        .page-back svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Loading */
+        .page-loading {
+            text-align: center;
+            padding: 80px 20px;
+            color: #888;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .page-loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #eee;
+            border-top-color: #F5A84F;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Not found */
+        .page-not-found {
+            text-align: center;
+            padding: 80px 20px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .page-not-found h2 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+        }
+
+        .page-not-found p {
+            color: #888;
+            margin-bottom: 24px;
+        }
+
+        .page-not-found a {
+            color: #F5A84F;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-hero {
+                padding: 50px 16px 40px;
+            }
+
+            .page-hero-logo {
+                top: 14px;
+                left: 16px;
+                font-size: 1rem;
+                letter-spacing: 1.5px;
+            }
+
+            .page-hero h1 {
+                font-size: 1.6rem;
+            }
+
+            .page-content-wrapper {
+                padding: 30px 16px 60px;
+            }
+
+            .page-body h2 {
+                font-size: 1.15rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Hero Banner -->
+    <div class="page-hero" id="page-hero" style="display: none;">
+        <a href="index.html" class="page-hero-logo">Legado San José</a>
+        <h1 id="page-title"></h1>
+        <div class="hero-line"></div>
+    </div>
+
+    <!-- Page Content -->
+    <div class="page-content-wrapper">
+        <div id="page-loading" class="page-loading">
+            <div class="spinner"></div>
+            <p>Cargando...</p>
+        </div>
+        <div id="page-content" style="display: none;">
+            <a href="javascript:history.back()" class="page-back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5"></path>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Regresar
+            </a>
+            <div id="page-body" class="page-body"></div>
+        </div>
+        <div id="page-not-found" class="page-not-found" style="display: none;">
+            <h2>Página no encontrada</h2>
+            <p>La página que buscas no existe o no está disponible.</p>
+            <a href="index.html">Volver al inicio</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" id="contacto">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h3>LEGADO SAN JOSÉ</h3>
+                    <p>Tradición que se viste</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Compra</h4>
+                    <ul>
+                        <li><a href="productos.html">Productos</a></li>
+                        <li><a href="index.html#contacto">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Información</h4>
+                    <ul id="footer-pages-links">
+                        <!-- Dynamic pages loaded by content-loader.js -->
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Síguenos</h4>
+                    <div class="social-links">
+                        <a href="https://www.facebook.com/legadosanjose" target="_blank">Facebook</a>
+                        <a href="https://www.instagram.com/legado_sanjose/" target="_blank">Instagram</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Legado San José. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="pagina.js"></script>
+    <script src="content-loader.js"></script>
+</body>
+
+</html>

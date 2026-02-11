@@ -54,11 +54,23 @@
                 <a href="#" class="nav-item active" data-section="products">
                     <span class="icon">📦</span> Productos
                 </a>
+                <a href="#" class="nav-item" data-section="orders">
+                    <span class="icon">🧾</span> Pedidos
+                </a>
                 <a href="#" class="nav-item" data-section="gallery">
                     <span class="icon">🖼️</span> Galería
                 </a>
                 <a href="#" class="nav-item" data-section="categories">
                     <span class="icon">🏷️</span> Categorías
+                </a>
+                <a href="#" class="nav-item" data-section="discounts">
+                    <span class="icon">💰</span> Descuentos
+                </a>
+                <a href="#" class="nav-item" data-section="pages">
+                    <span class="icon">📄</span> Páginas
+                </a>
+                <a href="#" class="nav-item" data-section="subscribers">
+                    <span class="icon">📧</span> Suscriptores
                 </a>
                 <a href="#" class="nav-item" data-section="content">
                     <span class="icon">📝</span> Contenido
@@ -89,6 +101,16 @@
                 </div>
             </section>
 
+            <!-- Orders Section -->
+            <section id="orders-section" class="section">
+                <div class="section-header">
+                    <h1>Pedidos</h1>
+                </div>
+                <div id="orders-list">
+                    <!-- Orders will be loaded here -->
+                </div>
+            </section>
+
             <!-- Gallery Section -->
             <section id="gallery-section" class="section">
                 <div class="section-header">
@@ -108,6 +130,42 @@
                 </div>
                 <div class="categories-list" id="admin-categories-list">
                     <!-- Categories will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Discounts Section -->
+            <section id="discounts-section" class="section">
+                <div class="section-header">
+                    <h1>Códigos de Descuento</h1>
+                    <button id="add-discount-btn" class="btn-primary">+ Nuevo Código</button>
+                </div>
+                <div id="discounts-list">
+                    <!-- Discount codes will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Pages Section -->
+            <section id="pages-section" class="section">
+                <div class="section-header">
+                    <h1>Páginas</h1>
+                    <button id="add-page-btn" class="btn-primary">+ Nueva Página</button>
+                </div>
+                <div id="pages-list">
+                    <!-- Pages will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Subscribers Section -->
+            <section id="subscribers-section" class="section">
+                <div class="section-header">
+                    <h1>Suscriptores</h1>
+                    <button id="send-email-btn" class="btn-primary">📨 Enviar Email</button>
+                </div>
+                <div class="subscribers-stats" id="subscribers-stats">
+                    <!-- Stats will be loaded here -->
+                </div>
+                <div id="subscribers-list">
+                    <!-- Subscribers will be loaded here -->
                 </div>
             </section>
 
@@ -200,6 +258,13 @@
                             </select>
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="product-stock">Inventario</label>
+                            <input type="number" id="product-stock" min="0" placeholder="Dejar vacío = ilimitado">
+                            <small style="color: #888;">Dejar vacío para inventario ilimitado</small>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="product-description">Descripción</label>
                         <textarea id="product-description" rows="3"></textarea>
@@ -287,7 +352,7 @@
         <div class="modal-backdrop"></div>
         <div class="modal-content small">
             <div class="modal-header">
-                <h2>Confirmar Eliminación</h2>
+                <h2 id="confirm-title">Confirmar</h2>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
@@ -296,6 +361,27 @@
             <div class="modal-footer">
                 <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
                 <button type="button" class="btn-danger" id="confirm-delete-btn">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Prompt Modal -->
+    <div id="input-prompt-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2 id="input-prompt-title">Ingresa un valor</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label id="input-prompt-label"></label>
+                    <input type="text" id="input-prompt-value" placeholder="">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
+                <button type="button" class="btn-primary" id="input-prompt-ok">Aceptar</button>
             </div>
         </div>
     </div>
@@ -327,6 +413,143 @@
                     <button type="submit" class="btn-primary">Guardar</button>
                 </div>
                 <input type="hidden" id="category-id">
+            </form>
+        </div>
+    </div>
+
+    <!-- Discount Modal -->
+    <div id="discount-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2 id="discount-modal-title">Nuevo Código de Descuento</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="discount-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="discount-code">Código *</label>
+                        <input type="text" id="discount-code" required placeholder="Ej: VERANO20" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="discount-type">Tipo de Descuento *</label>
+                            <select id="discount-type" required>
+                                <option value="percent">Porcentaje (%)</option>
+                                <option value="fixed">Monto Fijo (MXN)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-value">Valor *</label>
+                            <input type="number" id="discount-value" required min="1" placeholder="Ej: 20">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="discount-max-uses">Máximo de Usos</label>
+                            <input type="number" id="discount-max-uses" min="1" placeholder="Sin límite">
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-expires">Fecha de Expiración</label>
+                            <input type="date" id="discount-expires">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">Crear Código</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Page Modal -->
+    <div id="page-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="page-modal-title">Nueva Página</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="page-form">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="page-title">Título *</label>
+                            <input type="text" id="page-title" required placeholder="Ej: Aviso de Privacidad">
+                        </div>
+                        <div class="form-group">
+                            <label for="page-active">Estado</label>
+                            <select id="page-active">
+                                <option value="true">Activa</option>
+                                <option value="false">Inactiva</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="page-content">Contenido (HTML permitido)</label>
+                        <textarea id="page-content" rows="15" placeholder="Escribe el contenido de la página..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Página</button>
+                </div>
+                <input type="hidden" id="page-id">
+            </form>
+        </div>
+    </div>
+
+    <!-- Email Campaign Modal -->
+    <div id="email-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>Enviar Email a Suscriptores</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="email-form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="email-subject">Asunto *</label>
+                        <input type="text" id="email-subject" required placeholder="Ej: ¡Nuevos productos disponibles!">
+                    </div>
+                    <div class="form-group">
+                        <label for="email-header-text">Texto del Header</label>
+                        <input type="text" id="email-header-text" placeholder="LEGADO SAN JOSÉ" value="LEGADO SAN JOSÉ">
+                        <small style="color: #999; font-size: 12px; margin-top: 4px; display: block;">Aparece en la barra superior del email. Déjalo vacío para no mostrar header.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Contenido *</label>
+                        <div class="email-editor-wrapper">
+                            <div class="email-toolbar">
+                                <button type="button" class="toolbar-btn" data-cmd="bold" title="Negrita"><b>B</b></button>
+                                <button type="button" class="toolbar-btn" data-cmd="italic" title="Cursiva"><i>I</i></button>
+                                <button type="button" class="toolbar-btn" data-cmd="underline" title="Subrayado"><u>U</u></button>
+                                <span class="toolbar-sep"></span>
+                                <button type="button" class="toolbar-btn" data-cmd="formatBlock" data-value="h2" title="Título">H</button>
+                                <button type="button" class="toolbar-btn" data-cmd="formatBlock" data-value="p" title="Párrafo">¶</button>
+                                <span class="toolbar-sep"></span>
+                                <button type="button" class="toolbar-btn" data-cmd="insertUnorderedList" title="Lista con viñetas">• Lista</button>
+                                <button type="button" class="toolbar-btn" data-cmd="createLink" title="Insertar enlace">🔗 Link</button>
+                                <span class="toolbar-sep"></span>
+                                <button type="button" class="toolbar-btn" data-cmd="justifyLeft" title="Alinear izquierda">⫷</button>
+                                <button type="button" class="toolbar-btn" data-cmd="justifyCenter" title="Centrar">⫿</button>
+                            </div>
+                            <div class="email-editor" id="email-content" contenteditable="true" data-placeholder="Escribe tu email aquí..."></div>
+                        </div>
+                    </div>
+                    <div id="email-preview-section" style="display: none;">
+                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">Vista Previa:</label>
+                        <div id="email-preview" style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: #fafafa; max-height: 300px; overflow-y: auto;"></div>
+                    </div>
+                    <p id="email-recipient-count" style="color: #888; font-size: 13px; margin-top: 12px;"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="email-preview-btn">Vista Previa</button>
+                    <button type="button" class="btn-secondary modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn-primary">📨 Enviar a Todos</button>
+                </div>
             </form>
         </div>
     </div>

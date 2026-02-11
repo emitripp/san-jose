@@ -8,7 +8,12 @@ let currentProducts = [];
 let currentGallery = [];
 let currentContent = [];
 let currentCategories = [];
+let currentOrders = [];
+let currentDiscountCodes = [];
+let currentPages = [];
+let currentSubscribers = [];
 let deleteCallback = null;
+let inputPromptCallback = null;
 
 // ============================================
 // INITIALIZATION
@@ -53,6 +58,18 @@ function setupEventListeners() {
         addCategoryBtn.addEventListener('click', () => openCategoryModal());
     }
 
+    // Add discount button
+    const addDiscountBtn = document.getElementById('add-discount-btn');
+    if (addDiscountBtn) {
+        addDiscountBtn.addEventListener('click', () => openDiscountModal());
+    }
+
+    // Add page button
+    const addPageBtn = document.getElementById('add-page-btn');
+    if (addPageBtn) {
+        addPageBtn.addEventListener('click', () => openPageModal());
+    }
+
     // Product form
     document.getElementById('product-form').addEventListener('submit', handleProductSubmit);
 
@@ -65,19 +82,122 @@ function setupEventListeners() {
         categoryForm.addEventListener('submit', handleCategorySubmit);
     }
 
+    // Discount form
+    const discountForm = document.getElementById('discount-form');
+    if (discountForm) {
+        discountForm.addEventListener('submit', handleDiscountSubmit);
+    }
+
+    // Page form
+    const pageForm = document.getElementById('page-form');
+    if (pageForm) {
+        pageForm.addEventListener('submit', handlePageSubmit);
+    }
+
+    // Send email button
+    const sendEmailBtn = document.getElementById('send-email-btn');
+    if (sendEmailBtn) {
+        sendEmailBtn.addEventListener('click', () => openEmailModal());
+    }
+
+    // Email form
+    const emailForm = document.getElementById('email-form');
+    if (emailForm) {
+        emailForm.addEventListener('submit', handleSendEmail);
+    }
+
+    // Email editor toolbar buttons
+    document.querySelectorAll('.toolbar-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const cmd = btn.dataset.cmd;
+            const val = btn.dataset.value || null;
+            const editor = document.getElementById('email-content');
+            editor.focus();
+            if (cmd === 'createLink') {
+                showInputPrompt('Insertar Enlace', 'URL del enlace', 'https://', (url) => {
+                    if (url) {
+                        editor.focus();
+                        document.execCommand('createLink', false, url);
+                        updateToolbarState();
+                    }
+                });
+            } else if (cmd === 'formatBlock') {
+                document.execCommand('formatBlock', false, `<${val}>`);
+            } else {
+                document.execCommand(cmd, false, val);
+            }
+            updateToolbarState();
+        });
+    });
+
+    // Track toolbar active state on selection changes
+    const emailEditor = document.getElementById('email-content');
+    if (emailEditor) {
+        emailEditor.addEventListener('keyup', updateToolbarState);
+        emailEditor.addEventListener('mouseup', updateToolbarState);
+        emailEditor.addEventListener('focus', updateToolbarState);
+    }
+
+    // Email preview button
+    const emailPreviewBtn = document.getElementById('email-preview-btn');
+    if (emailPreviewBtn) {
+        emailPreviewBtn.addEventListener('click', () => {
+            const editor = document.getElementById('email-content');
+            const content = editor.innerHTML;
+            const headerText = document.getElementById('email-header-text').value.trim();
+            const previewSection = document.getElementById('email-preview-section');
+            const previewDiv = document.getElementById('email-preview');
+            if (content.trim() && content.trim() !== '<br>') {
+                previewDiv.innerHTML = buildEmailPreview(headerText, content);
+                previewSection.style.display = 'block';
+            }
+        });
+    }
+
     // Change password form
     document.getElementById('change-password-form').addEventListener('submit', handlePasswordChange);
 
-    // Modal close buttons
+    // Modal close buttons — except overlay modals (confirm, input-prompt)
     document.querySelectorAll('.modal-close, .modal-cancel, .modal-backdrop').forEach(el => {
-        el.addEventListener('click', closeAllModals);
+        el.addEventListener('click', (e) => {
+            const parentModal = e.target.closest('.modal');
+            if (parentModal && (parentModal.id === 'confirm-modal' || parentModal.id === 'input-prompt-modal')) {
+                // Only close this overlay modal, not the one underneath
+                parentModal.classList.remove('active');
+                deleteCallback = null;
+                inputPromptCallback = null;
+            } else {
+                closeAllModals();
+            }
+        });
     });
 
-    // Confirm delete button
+    // Confirm action button
     document.getElementById('confirm-delete-btn').addEventListener('click', () => {
         if (deleteCallback) {
-            deleteCallback();
-            closeAllModals();
+            const cb = deleteCallback;
+            deleteCallback = null;
+            document.getElementById('confirm-modal').classList.remove('active');
+            cb();
+        }
+    });
+
+    // Input prompt modal - OK button
+    document.getElementById('input-prompt-ok').addEventListener('click', () => {
+        const val = document.getElementById('input-prompt-value').value;
+        if (inputPromptCallback) {
+            const cb = inputPromptCallback;
+            inputPromptCallback = null;
+            document.getElementById('input-prompt-modal').classList.remove('active');
+            cb(val);
+        }
+    });
+
+    // Input prompt modal - Enter key
+    document.getElementById('input-prompt-value').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('input-prompt-ok').click();
         }
     });
 
@@ -173,8 +293,12 @@ function showDashboard(admin) {
     // Load initial data
     loadCategories(); // Load categories first for product form
     loadProducts();
+    loadOrders();
     loadGallery();
     loadContent();
+    loadDiscountCodes();
+    loadPages();
+    loadSubscribers();
     loadSettings();
 }
 
@@ -305,6 +429,9 @@ function renderProducts() {
                                 <span class="product-row-name">${product.name}</span>
                                 <span class="product-row-price">$${product.price.toLocaleString('es-MX')} MXN</span>
                             </div>
+                            <span class="product-row-stock" style="font-size: 0.8rem; color: ${product.stock === 0 ? '#e74c3c' : product.stock !== null && product.stock !== undefined ? '#27ae60' : '#888'};">
+                                ${product.stock === 0 ? 'AGOTADO' : product.stock !== null && product.stock !== undefined ? product.stock + ' pzas' : 'Sin límite'}
+                            </span>
                             <span class="product-row-status ${product.is_active ? 'active' : 'inactive'}">
                                 ${product.is_active ? 'Activo' : 'Inactivo'}
                             </span>
@@ -410,6 +537,7 @@ function openProductModal(product = null) {
     document.querySelector('#main-image-upload .upload-placeholder').style.display = 'block';
     document.getElementById('additional-images').innerHTML = '';
     document.getElementById('variants-container').innerHTML = '';
+    document.getElementById('product-stock').value = '';
 
     if (product) {
         title.textContent = 'Editar Producto';
@@ -420,6 +548,7 @@ function openProductModal(product = null) {
         document.getElementById('product-description').value = product.description || '';
         document.getElementById('product-active').value = product.is_active ? 'true' : 'false';
         document.getElementById('product-sizes').value = (product.sizes || []).join(', ');
+        document.getElementById('product-stock').value = product.stock !== null && product.stock !== undefined ? product.stock : '';
         document.getElementById('product-image-url').value = product.image_url || '';
 
         // Show main image
@@ -460,6 +589,7 @@ async function handleProductSubmit(e) {
     const isEdit = !!id;
 
     // Gather form data
+    const stockValue = document.getElementById('product-stock').value;
     const productData = {
         name: document.getElementById('product-name').value,
         price: parseInt(document.getElementById('product-price').value),
@@ -472,7 +602,8 @@ async function handleProductSubmit(e) {
             .split(',')
             .map(s => s.trim())
             .filter(s => s),
-        variants: getVariants()
+        variants: getVariants(),
+        stock: stockValue !== '' ? parseInt(stockValue) : null
     };
 
     try {
@@ -505,11 +636,12 @@ async function handleProductSubmit(e) {
 
 function confirmDeleteProduct(id) {
     const product = currentProducts.find(p => p.id === id);
-    document.getElementById('confirm-message').textContent =
-        `¿Estás seguro de que deseas eliminar "${product?.name || 'este producto'}"?`;
-
-    deleteCallback = () => deleteProduct(id);
-    document.getElementById('confirm-modal').classList.add('active');
+    showConfirmModal(
+        'Confirmar Eliminación',
+        `¿Estás seguro de que deseas eliminar "${product?.name || 'este producto'}"?`,
+        'Eliminar',
+        () => deleteProduct(id)
+    );
 }
 
 async function deleteProduct(id) {
@@ -786,19 +918,109 @@ function renderGallery() {
 
     // Helper to fix image path (relative paths need to go up from /admin/)
     const fixImagePath = (url) => {
-        if (!url) return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23eee" width="100" height="100"/></svg>';
+        if (!url) return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150"><rect fill="%23eee" width="200" height="150"/></svg>';
         if (url.startsWith('http') || url.startsWith('data:')) return url;
         return '../' + url;
     };
 
-    grid.innerHTML = currentGallery.map(img => `
-        <div class="gallery-item" data-id="${img.id}" style="cursor: default;">
-            <img src="${fixImagePath(img.image_url)}" alt="${img.alt_text || 'Gallery image'}" style="cursor: default;" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><rect fill=\\'%23eee\\' width=\\'100\\' height=\\'100\\'/></svg>'">
-            <div class="gallery-item-overlay">
-                <button onclick="confirmDeleteGallery('${img.id}')">Eliminar</button>
+    grid.innerHTML = `<div class="gallery-reorder-grid">
+        ${currentGallery.map((img, index) => `
+            <div class="gallery-reorder-item" data-id="${img.id}" draggable="true">
+                <img src="${fixImagePath(img.image_url)}" alt="${img.alt_text || 'Gallery image'}" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'150\\'><rect fill=\\'%23eee\\' width=\\'200\\' height=\\'150\\'/></svg>'">
+                <div class="gallery-reorder-overlay">
+                    <div class="gallery-order-badge">${index + 1}</div>
+                    <div class="gallery-item-info">
+                        <span class="gallery-alt-text">${img.alt_text || 'Sin descripción'}</span>
+                        <button class="btn-delete-gallery" onclick="event.stopPropagation(); confirmDeleteGallery('${img.id}')">×</button>
+                    </div>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `).join('')}
+    </div>`;
+
+    // Initialize drag & drop for gallery
+    initGalleryDragAndDrop();
+}
+
+function initGalleryDragAndDrop() {
+    const container = document.querySelector('.gallery-reorder-grid');
+    if (!container) return;
+
+    let draggedItem = null;
+
+    container.addEventListener('dragstart', (e) => {
+        const item = e.target.closest('.gallery-reorder-item');
+        if (item) {
+            draggedItem = item;
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+    });
+
+    container.addEventListener('dragend', (e) => {
+        const item = e.target.closest('.gallery-reorder-item');
+        if (item) {
+            item.classList.remove('dragging');
+            // Update order badges
+            container.querySelectorAll('.gallery-reorder-item').forEach((el, i) => {
+                const badge = el.querySelector('.gallery-order-badge');
+                if (badge) badge.textContent = i + 1;
+            });
+            saveGalleryOrder();
+        }
+    });
+
+    container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const afterElement = getGalleryDragAfterElement(container, e.clientX, e.clientY);
+        const dragging = container.querySelector('.dragging');
+        if (!dragging) return;
+        if (afterElement == null) {
+            container.appendChild(dragging);
+        } else {
+            container.insertBefore(dragging, afterElement);
+        }
+    });
+}
+
+function getGalleryDragAfterElement(container, x, y) {
+    const elements = [...container.querySelectorAll('.gallery-reorder-item:not(.dragging)')];
+    return elements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offsetX = x - box.left - box.width / 2;
+        const offsetY = y - box.top - box.height / 2;
+        // Use combined distance for grid layout
+        const offset = offsetY * 3 + offsetX; // Weight Y more since rows matter more
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+async function saveGalleryOrder() {
+    const items = document.querySelectorAll('.gallery-reorder-item');
+    const orderedIds = [...items].map(item => item.dataset.id);
+
+    try {
+        const response = await fetch(`${API_BASE}/gallery-reorder`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ orderedIds })
+        });
+
+        if (!response.ok) throw new Error('Failed to reorder');
+        showToast('Orden de galería actualizado', 'success');
+
+    } catch (error) {
+        console.error('Gallery reorder error:', error);
+        showToast('Error al reordenar galería', 'error');
+    }
 }
 
 function openGalleryModal() {
@@ -878,11 +1100,12 @@ async function handleGallerySubmit(e) {
 }
 
 function confirmDeleteGallery(id) {
-    document.getElementById('confirm-message').textContent =
-        '¿Estás seguro de que deseas eliminar esta imagen de la galería?';
-
-    deleteCallback = () => deleteGallery(id);
-    document.getElementById('confirm-modal').classList.add('active');
+    showConfirmModal(
+        'Confirmar Eliminación',
+        '¿Estás seguro de que deseas eliminar esta imagen de la galería?',
+        'Eliminar',
+        () => deleteGallery(id)
+    );
 }
 
 async function deleteGallery(id) {
@@ -938,21 +1161,103 @@ function renderContent() {
     const sectionLabels = {
         hero: 'Sección Hero (Inicio)',
         about: 'Sección Nosotros',
-        footer: 'Footer'
+        footer: 'Footer',
+        shop: 'Tienda (Productos)',
+        newsletter: 'Suscripción (Newsletter)'
     };
 
-    editor.innerHTML = Object.entries(sections).map(([section, items]) => `
+    // Order sections for display
+    const sectionOrder = ['hero', 'about', 'shop', 'newsletter', 'footer'];
+
+    const keyLabels = {
+        'subtitle': 'Subtítulo',
+        'title': 'Título',
+        'description': 'Descripción',
+        'button': 'Texto del Botón',
+        'button_link': 'Destino del Botón',
+        'paragraph1': 'Párrafo 1',
+        'paragraph2': 'Párrafo 2',
+        'tagline': 'Eslogan',
+        'features': 'Características (separadas por |)',
+        'video_url': 'URL del Video de Fondo'
+    };
+
+    // Build page link options for button_link select
+    const linkOptions = [
+        { value: 'productos.html', label: 'Productos (Tienda)' },
+        { value: 'index.html#contacto', label: 'Contacto' },
+        { value: 'index.html#galeria', label: 'Galería' },
+        { value: 'index.html#nosotros', label: 'Nosotros' },
+    ];
+    // Add dynamic pages
+    if (currentPages && currentPages.length > 0) {
+        currentPages
+            .filter(p => p.is_active)
+            .forEach(p => {
+                linkOptions.push({ value: `pagina.html?slug=${p.slug}`, label: p.title });
+            });
+    }
+
+    // Sort sections by defined order, filter out settings
+    const sortedSections = Object.entries(sections)
+        .filter(([section]) => section !== 'settings')
+        .sort((a, b) => {
+            const idxA = sectionOrder.indexOf(a[0]);
+            const idxB = sectionOrder.indexOf(b[0]);
+            return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+        });
+
+    editor.innerHTML = sortedSections.map(([section, items]) => `
         <div class="content-section">
             <h3>${sectionLabels[section] || section}</h3>
-            ${items.map(item => `
+            ${items.map(item => {
+                const label = keyLabels[item.key] || item.key;
+
+                // Skip maintenance_mode (managed in settings)
+                if (item.key === 'maintenance_mode') return '';
+
+                // Special: button_link renders as a select dropdown
+                if (item.key === 'button_link') {
+                    const currentVal = item.content || 'productos.html';
+                    return `
+                    <div class="form-group">
+                        <label>${label}</label>
+                        <select id="content-${section}-${item.key}"
+                                onchange="updateContent('${section}', '${item.key}', this.value)">
+                            ${linkOptions.map(opt =>
+                                `<option value="${opt.value}" ${opt.value === currentVal ? 'selected' : ''}>${opt.label}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    `;
+                }
+
+                // Special: features renders as textarea with helper text
+                if (item.key === 'features') {
+                    return `
+                    <div class="form-group">
+                        <label>${label}</label>
+                        <input type="text"
+                               id="content-${section}-${item.key}"
+                               value="${item.content || ''}"
+                               placeholder="Ej: Diseños exclusivos|Calidad premium|Ediciones limitadas"
+                               onchange="updateContent('${section}', '${item.key}', this.value)">
+                        <small style="color: #999; font-size: 12px; margin-top: 4px; display: block;">Separa cada característica con el símbolo |</small>
+                    </div>
+                    `;
+                }
+
+                const inputType = item.key.includes('link') || item.key.includes('url') ? 'url' : 'text';
+                return `
                 <div class="form-group">
-                    <label>${item.key}</label>
-                    <input type="text" 
-                           id="content-${section}-${item.key}" 
+                    <label>${label}</label>
+                    <input type="${inputType}"
+                           id="content-${section}-${item.key}"
                            value="${item.content || ''}"
+                           ${inputType === 'url' ? 'placeholder="https://... o ruta relativa"' : ''}
                            onchange="updateContent('${section}', '${item.key}', this.value)">
                 </div>
-            `).join('')}
+            `}).join('')}
         </div>
     `).join('');
 }
@@ -1128,11 +1433,12 @@ async function handleCategorySubmit(e) {
 
 function confirmDeleteCategory(id) {
     const category = currentCategories.find(c => c.id === id);
-    document.getElementById('confirm-message').textContent =
-        `¿Estás seguro de que deseas eliminar la categoría "${category?.name || ''}"?`;
-
-    deleteCallback = () => deleteCategory(id);
-    document.getElementById('confirm-modal').classList.add('active');
+    showConfirmModal(
+        'Confirmar Eliminación',
+        `¿Estás seguro de que deseas eliminar la categoría "${category?.name || ''}"?`,
+        'Eliminar',
+        () => deleteCategory(id)
+    );
 }
 
 async function deleteCategory(id) {
@@ -1227,6 +1533,7 @@ function closeAllModals() {
         modal.classList.remove('active');
     });
     deleteCallback = null;
+    inputPromptCallback = null;
 }
 
 function showToast(message, type = 'success') {
@@ -1241,6 +1548,720 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+// ============================================
+// ORDERS
+// ============================================
+
+async function loadOrders() {
+    try {
+        const response = await fetch(`${API_BASE}/orders`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load orders');
+
+        currentOrders = await response.json();
+        renderOrders();
+
+    } catch (error) {
+        console.error('Load orders error:', error);
+    }
+}
+
+function renderOrders() {
+    const list = document.getElementById('orders-list');
+    if (!list) return;
+
+    if (!currentOrders || currentOrders.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No hay pedidos aún.</p>';
+        return;
+    }
+
+    const statusColors = {
+        'pagado': '#3498db',
+        'procesado': '#f39c12',
+        'enviado': '#9b59b6',
+        'entregado': '#27ae60',
+        'pendiente': '#95a5a6'
+    };
+
+    const statusLabels = {
+        'pagado': 'PAGADO',
+        'procesado': 'PROCESADO',
+        'enviado': 'ENVIADO',
+        'entregado': 'ENTREGADO',
+        'pendiente': 'PENDIENTE'
+    };
+
+    list.innerHTML = `
+        <div class="orders-table">
+            <div class="orders-header">
+                <span>Pedido</span>
+                <span>Cliente</span>
+                <span>Total</span>
+                <span>Estado</span>
+                <span>Fecha</span>
+                <span>Acciones</span>
+            </div>
+            ${currentOrders.map(order => {
+                const status = order.status || 'pendiente';
+                const customer = order.customer || {};
+                const date = order.createdAt ? new Date(order.createdAt).toLocaleDateString('es-MX') : 'N/A';
+                return `
+                <div class="order-row" data-id="${order.id}">
+                    <span class="order-id">${order.id}</span>
+                    <span class="order-customer">
+                        <strong>${customer.name || 'N/A'}</strong><br>
+                        <small>${customer.email || ''}</small>
+                    </span>
+                    <span class="order-total">$${(order.total || 0).toLocaleString('es-MX')} MXN</span>
+                    <span>
+                        <select class="order-status-select" data-order-id="${order.id}" style="border: 2px solid ${statusColors[status] || '#ccc'}; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; color: ${statusColors[status] || '#333'};">
+                            ${['pagado', 'procesado', 'enviado', 'entregado'].map(s =>
+                                `<option value="${s}" ${status === s ? 'selected' : ''}>${statusLabels[s]}</option>`
+                            ).join('')}
+                        </select>
+                    </span>
+                    <span class="order-date">${date}</span>
+                    <span>
+                        <button class="btn-edit-sm" onclick="viewOrderDetails('${order.id}')">Ver</button>
+                    </span>
+                </div>
+            `}).join('')}
+        </div>
+    `;
+
+    // Add event listeners for status changes
+    list.querySelectorAll('.order-status-select').forEach(select => {
+        select.addEventListener('change', (e) => {
+            updateOrderStatus(e.target.dataset.orderId, e.target.value);
+        });
+    });
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+    try {
+        const response = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        if (!response.ok) throw new Error('Failed to update status');
+
+        showToast(`Pedido actualizado a: ${newStatus.toUpperCase()}`, 'success');
+        loadOrders();
+
+    } catch (error) {
+        console.error('Update order status error:', error);
+        showToast('Error al actualizar estado', 'error');
+        loadOrders(); // Reload to revert select
+    }
+}
+
+function viewOrderDetails(orderId) {
+    const order = currentOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    const customer = order.customer || {};
+    const items = order.items || [];
+    const address = customer.address || {};
+
+    let addressStr = '';
+    if (address.line1) {
+        addressStr = `${address.line1}${address.line2 ? ', ' + address.line2 : ''}, ${address.city || ''}, ${address.state || ''} ${address.postal_code || ''}`;
+    }
+
+    const detailsHtml = `
+        <div style="max-width: 500px;">
+            <h3 style="margin-bottom: 16px;">Pedido ${order.id}</h3>
+            <p><strong>Cliente:</strong> ${customer.name || 'N/A'}</p>
+            <p><strong>Email:</strong> ${customer.email || 'N/A'}</p>
+            ${addressStr ? `<p><strong>Dirección:</strong> ${addressStr}</p>` : ''}
+            <p><strong>Estado:</strong> ${(order.status || 'pendiente').toUpperCase()}</p>
+            ${order.trackingNumber ? `<p><strong>Rastreo:</strong> ${order.trackingNumber}</p>` : ''}
+            <hr style="margin: 12px 0;">
+            <p><strong>Productos:</strong></p>
+            <ul style="margin: 8px 0; padding-left: 20px;">
+                ${items.map(item => `<li>${item.name}${item.size ? ' ('+item.size+')' : ''} x${item.quantity} — $${(item.price || 0).toLocaleString('es-MX')}</li>`).join('')}
+            </ul>
+            <hr style="margin: 12px 0;">
+            <p><strong>Envío:</strong> $${(order.shipping || 0).toLocaleString('es-MX')} MXN</p>
+            <p style="font-size: 1.1rem;"><strong>Total: $${(order.total || 0).toLocaleString('es-MX')} MXN</strong></p>
+        </div>
+    `;
+
+    document.getElementById('confirm-title').textContent = 'Detalles del Pedido';
+    document.getElementById('confirm-message').innerHTML = detailsHtml;
+    document.getElementById('confirm-delete-btn').style.display = 'none';
+    document.getElementById('confirm-modal').classList.add('active');
+
+    // Restore delete button when modal closes
+    const restoreBtn = () => {
+        document.getElementById('confirm-delete-btn').style.display = '';
+        document.getElementById('confirm-message').textContent = '';
+    };
+    document.querySelectorAll('#confirm-modal .modal-close, #confirm-modal .modal-cancel, #confirm-modal .modal-backdrop').forEach(el => {
+        el.addEventListener('click', restoreBtn, { once: true });
+    });
+}
+
+// ============================================
+// DISCOUNT CODES
+// ============================================
+
+async function loadDiscountCodes() {
+    try {
+        const response = await fetch(`${API_BASE}/discount-codes`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load discount codes');
+
+        currentDiscountCodes = await response.json();
+        renderDiscountCodes();
+
+    } catch (error) {
+        console.error('Load discount codes error:', error);
+    }
+}
+
+function renderDiscountCodes() {
+    const list = document.getElementById('discounts-list');
+    if (!list) return;
+
+    if (!currentDiscountCodes || currentDiscountCodes.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No hay códigos de descuento. Haz clic en "+ Nuevo Código" para crear uno.</p>';
+        return;
+    }
+
+    list.innerHTML = `
+        <div class="categories-table">
+            <div class="categories-header">
+                <span>Código</span>
+                <span>Descuento</span>
+                <span>Usos</span>
+                <span>Expiración</span>
+                <span>Estado</span>
+                <span>Acciones</span>
+            </div>
+            ${currentDiscountCodes.map(promo => {
+                const coupon = promo.coupon || {};
+                const discount = coupon.percent_off
+                    ? `${coupon.percent_off}%`
+                    : coupon.amount_off
+                        ? `$${(coupon.amount_off / 100).toLocaleString('es-MX')} MXN`
+                        : 'N/A';
+                const uses = promo.max_redemptions
+                    ? `${promo.times_redeemed || 0} / ${promo.max_redemptions}`
+                    : `${promo.times_redeemed || 0} / ∞`;
+                const expires = promo.expires_at
+                    ? new Date(promo.expires_at * 1000).toLocaleDateString('es-MX')
+                    : 'Sin expiración';
+                return `
+                <div class="category-row">
+                    <span style="font-weight: 600; font-family: monospace; font-size: 1rem;">${promo.code}</span>
+                    <span>${discount}</span>
+                    <span>${uses}</span>
+                    <span>${expires}</span>
+                    <span class="category-status ${promo.active ? 'active' : 'inactive'}">
+                        ${promo.active ? 'Activo' : 'Inactivo'}
+                    </span>
+                    <span>
+                        <button class="btn-edit-sm" onclick="toggleDiscountCode('${promo.id}', ${!promo.active})">
+                            ${promo.active ? 'Desactivar' : 'Activar'}
+                        </button>
+                    </span>
+                </div>
+            `}).join('')}
+        </div>
+    `;
+}
+
+function openDiscountModal() {
+    const modal = document.getElementById('discount-modal');
+    document.getElementById('discount-form').reset();
+    modal.classList.add('active');
+}
+
+async function handleDiscountSubmit(e) {
+    e.preventDefault();
+
+    const data = {
+        code: document.getElementById('discount-code').value,
+        discount_type: document.getElementById('discount-type').value,
+        value: document.getElementById('discount-value').value,
+        max_redemptions: document.getElementById('discount-max-uses').value || null,
+        expires_at: document.getElementById('discount-expires').value || null
+    };
+
+    try {
+        const response = await fetch(`${API_BASE}/discount-codes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to create discount code');
+        }
+
+        showToast('Código de descuento creado', 'success');
+        closeAllModals();
+        loadDiscountCodes();
+
+    } catch (error) {
+        console.error('Create discount code error:', error);
+        showToast(error.message || 'Error al crear código', 'error');
+    }
+}
+
+async function toggleDiscountCode(id, active) {
+    try {
+        const response = await fetch(`${API_BASE}/discount-codes/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ active })
+        });
+
+        if (!response.ok) throw new Error('Failed to update discount code');
+
+        showToast(active ? 'Código activado' : 'Código desactivado', 'success');
+        loadDiscountCodes();
+
+    } catch (error) {
+        console.error('Toggle discount code error:', error);
+        showToast('Error al actualizar código', 'error');
+    }
+}
+
+// ============================================
+// PAGES
+// ============================================
+
+async function loadPages() {
+    try {
+        const response = await fetch(`${API_BASE}/pages`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load pages');
+
+        currentPages = await response.json();
+        renderPages();
+
+        // Re-render content section so button_link dropdown includes dynamic pages
+        if (currentContent.length > 0) {
+            renderContent();
+        }
+
+    } catch (error) {
+        console.error('Load pages error:', error);
+    }
+}
+
+function renderPages() {
+    const list = document.getElementById('pages-list');
+    if (!list) return;
+
+    if (!currentPages || currentPages.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No hay páginas. Haz clic en "+ Nueva Página" para crear una.</p>';
+        return;
+    }
+
+    list.innerHTML = `
+        <div class="categories-table">
+            <div class="categories-header">
+                <span>Título</span>
+                <span>URL</span>
+                <span>Estado</span>
+                <span>Acciones</span>
+            </div>
+            ${currentPages.map(page => `
+                <div class="category-row" data-id="${page.id}">
+                    <span class="category-name">${page.title}</span>
+                    <span class="category-slug">/pagina.html?slug=${page.slug}</span>
+                    <span class="category-status ${page.is_active ? 'active' : 'inactive'}">
+                        ${page.is_active ? 'Activa' : 'Inactiva'}
+                    </span>
+                    <div class="category-actions">
+                        <button class="btn-edit-sm" onclick="editPage('${page.id}')">Editar</button>
+                        <button class="btn-delete-sm" onclick="confirmDeletePage('${page.id}')">×</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function openPageModal(page = null) {
+    const modal = document.getElementById('page-modal');
+    const form = document.getElementById('page-form');
+    const title = document.getElementById('page-modal-title');
+
+    form.reset();
+    document.getElementById('page-id').value = '';
+
+    if (page) {
+        title.textContent = 'Editar Página';
+        document.getElementById('page-id').value = page.id;
+        document.getElementById('page-title').value = page.title;
+        document.getElementById('page-content').value = page.content || '';
+        document.getElementById('page-active').value = page.is_active ? 'true' : 'false';
+    } else {
+        title.textContent = 'Nueva Página';
+    }
+
+    modal.classList.add('active');
+}
+
+function editPage(id) {
+    const page = currentPages.find(p => p.id === id);
+    if (page) {
+        openPageModal(page);
+    }
+}
+
+async function handlePageSubmit(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('page-id').value;
+    const isEdit = !!id;
+
+    const pageData = {
+        title: document.getElementById('page-title').value,
+        content: document.getElementById('page-content').value,
+        is_active: document.getElementById('page-active').value === 'true'
+    };
+
+    try {
+        const url = isEdit ? `${API_BASE}/pages/${id}` : `${API_BASE}/pages`;
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(pageData)
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to save page');
+        }
+
+        showToast(isEdit ? 'Página actualizada' : 'Página creada', 'success');
+        closeAllModals();
+        loadPages();
+
+    } catch (error) {
+        console.error('Save page error:', error);
+        showToast(error.message || 'Error al guardar página', 'error');
+    }
+}
+
+function confirmDeletePage(id) {
+    const page = currentPages.find(p => p.id === id);
+    showConfirmModal(
+        'Confirmar Eliminación',
+        `¿Estás seguro de que deseas eliminar la página "${page?.title || ''}"?`,
+        'Eliminar',
+        () => deletePage(id)
+    );
+}
+
+async function deletePage(id) {
+    try {
+        const response = await fetch(`${API_BASE}/pages/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to delete page');
+
+        showToast('Página eliminada', 'success');
+        loadPages();
+
+    } catch (error) {
+        console.error('Delete page error:', error);
+        showToast('Error al eliminar página', 'error');
+    }
+}
+
+// ============================================
+// SUBSCRIBERS SECTION
+// ============================================
+
+async function loadSubscribers() {
+    try {
+        const response = await fetch(`${API_BASE}/subscribers`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to load subscribers');
+
+        currentSubscribers = await response.json();
+        renderSubscribers();
+
+    } catch (error) {
+        console.error('Load subscribers error:', error);
+    }
+}
+
+function renderSubscribers() {
+    const list = document.getElementById('subscribers-list');
+    const stats = document.getElementById('subscribers-stats');
+    if (!list) return;
+
+    const activeCount = currentSubscribers.filter(s => s.is_active).length;
+    const totalCount = currentSubscribers.length;
+
+    // Stats bar
+    if (stats) {
+        stats.innerHTML = `
+            <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="background: #f0f9f0; border: 1px solid #c3e6c3; border-radius: 8px; padding: 16px 24px; flex: 1; min-width: 150px; text-align: center;">
+                    <div style="font-size: 28px; font-weight: 700; color: #2d8a2d;">${activeCount}</div>
+                    <div style="font-size: 13px; color: #666; margin-top: 4px;">Activos</div>
+                </div>
+                <div style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; padding: 16px 24px; flex: 1; min-width: 150px; text-align: center;">
+                    <div style="font-size: 28px; font-weight: 700; color: #555;">${totalCount}</div>
+                    <div style="font-size: 13px; color: #666; margin-top: 4px;">Total</div>
+                </div>
+            </div>
+        `;
+    }
+
+    if (!currentSubscribers || currentSubscribers.length === 0) {
+        list.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">No hay suscriptores aún.</p>';
+        return;
+    }
+
+    list.innerHTML = `
+        <div class="categories-table">
+            <div class="categories-header" style="grid-template-columns: 2fr 1fr 1fr 80px;">
+                <span>Email</span>
+                <span>Fecha</span>
+                <span>Estado</span>
+                <span>Acciones</span>
+            </div>
+            ${currentSubscribers.map(sub => `
+                <div class="category-row" data-id="${sub.id}" style="grid-template-columns: 2fr 1fr 1fr 80px;">
+                    <span class="category-name" style="font-size: 14px;">${sub.email}</span>
+                    <span style="font-size: 13px; color: #888;">${new Date(sub.subscribed_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    <span>
+                        <span class="category-status ${sub.is_active ? 'active' : 'inactive'}">${sub.is_active ? 'Activo' : 'Inactivo'}</span>
+                    </span>
+                    <div class="category-actions">
+                        <button class="btn-delete-sm" onclick="confirmDeleteSubscriber('${sub.id}')">×</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function confirmDeleteSubscriber(id) {
+    const sub = currentSubscribers.find(s => s.id === id);
+    showConfirmModal(
+        'Confirmar Eliminación',
+        `¿Estás seguro de que deseas eliminar al suscriptor "${sub?.email || ''}"?`,
+        'Eliminar',
+        () => deleteSubscriber(id)
+    );
+}
+
+async function deleteSubscriber(id) {
+    try {
+        const response = await fetch(`${API_BASE}/subscribers/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to delete subscriber');
+
+        showToast('Suscriptor eliminado', 'success');
+        loadSubscribers();
+
+    } catch (error) {
+        console.error('Delete subscriber error:', error);
+        showToast('Error al eliminar suscriptor', 'error');
+    }
+}
+
+function buildEmailPreview(headerText, content) {
+    const headerHtml = headerText
+        ? `<div style="background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); padding: 30px; text-align: center;">
+               <h1 style="color: #F5A84F; font-size: 22px; margin: 0; letter-spacing: 4px; text-transform: uppercase; font-weight: 700;">${headerText}</h1>
+           </div>`
+        : '';
+
+    return `
+        <div style="max-width: 600px; margin: 0 auto; font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+            ${headerHtml}
+            <div style="padding: 30px; line-height: 1.8; color: #333;">
+                ${content}
+            </div>
+            <div style="background: #1a1a1a; padding: 20px; text-align: center;">
+                <p style="color: #888; font-size: 12px; margin: 0;">Legado San José — Tradición que se viste</p>
+                <p style="color: #666; font-size: 11px; margin: 8px 0 0;">Si ya no deseas recibir estos correos, responde con "DESUSCRIBIR".</p>
+            </div>
+        </div>
+    `;
+}
+
+function openEmailModal() {
+    const modal = document.getElementById('email-modal');
+    const form = document.getElementById('email-form');
+    form.reset();
+    // Clear the contenteditable editor
+    const editor = document.getElementById('email-content');
+    editor.innerHTML = '';
+    // Reset header text to default
+    document.getElementById('email-header-text').value = 'LEGADO SAN JOSÉ';
+    document.getElementById('email-preview-section').style.display = 'none';
+
+    const activeCount = currentSubscribers.filter(s => s.is_active).length;
+    document.getElementById('email-recipient-count').textContent =
+        `Este email se enviará a ${activeCount} suscriptor${activeCount !== 1 ? 'es' : ''} activo${activeCount !== 1 ? 's' : ''}.`;
+
+    modal.classList.add('active');
+}
+
+async function handleSendEmail(e) {
+    e.preventDefault();
+
+    const subject = document.getElementById('email-subject').value;
+    const editor = document.getElementById('email-content');
+    const content = editor.innerHTML.trim();
+    const headerText = document.getElementById('email-header-text').value.trim();
+    const activeCount = currentSubscribers.filter(s => s.is_active).length;
+
+    if (!content || content === '<br>') {
+        showToast('El contenido del email no puede estar vacío', 'error');
+        return;
+    }
+
+    if (activeCount === 0) {
+        showToast('No hay suscriptores activos', 'error');
+        return;
+    }
+
+    // Use custom confirm modal instead of native confirm()
+    showConfirmModal(
+        'Confirmar Envío',
+        `¿Enviar este email a ${activeCount} suscriptor${activeCount !== 1 ? 'es' : ''} activo${activeCount !== 1 ? 's' : ''}?`,
+        'Enviar',
+        async () => {
+            const submitBtn = document.querySelector('#email-form button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Enviando...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/subscribers/send-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ subject, content, headerText })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to send emails');
+                }
+
+                showToast(`${data.sent} emails enviados exitosamente`, 'success');
+                closeAllModals();
+
+            } catch (error) {
+                console.error('Send email error:', error);
+                showToast(error.message || 'Error al enviar emails', 'error');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+    );
+}
+
+// ============================================
+// CUSTOM CONFIRM MODAL (replaces native confirm())
+// ============================================
+
+function showConfirmModal(title, message, actionText, callback) {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    const actionBtn = document.getElementById('confirm-delete-btn');
+    actionBtn.textContent = actionText;
+    actionBtn.style.display = ''; // Ensure visible (may be hidden by order details view)
+    // Style: use primary for non-destructive, danger for destructive
+    if (actionText === 'Eliminar') {
+        actionBtn.className = 'btn-danger';
+    } else {
+        actionBtn.className = 'btn-primary';
+    }
+    deleteCallback = callback;
+    document.getElementById('confirm-modal').classList.add('active');
+}
+
+// ============================================
+// INPUT PROMPT MODAL (replaces native prompt())
+// ============================================
+
+function showInputPrompt(title, label, placeholder, callback) {
+    document.getElementById('input-prompt-title').textContent = title;
+    document.getElementById('input-prompt-label').textContent = label;
+    const input = document.getElementById('input-prompt-value');
+    input.value = placeholder || '';
+    input.placeholder = placeholder || '';
+    inputPromptCallback = callback;
+    document.getElementById('input-prompt-modal').classList.add('active');
+    setTimeout(() => { input.focus(); input.select(); }, 100);
+}
+
+// ============================================
+// TOOLBAR STATE TRACKING
+// ============================================
+
+function updateToolbarState() {
+    document.querySelectorAll('.toolbar-btn').forEach(btn => {
+        const cmd = btn.dataset.cmd;
+        const val = btn.dataset.value || null;
+        let isActive = false;
+
+        if (cmd === 'bold' || cmd === 'italic' || cmd === 'underline') {
+            isActive = document.queryCommandState(cmd);
+        } else if (cmd === 'insertUnorderedList') {
+            isActive = document.queryCommandState('insertUnorderedList');
+        } else if (cmd === 'justifyLeft') {
+            isActive = document.queryCommandState('justifyLeft');
+        } else if (cmd === 'justifyCenter') {
+            isActive = document.queryCommandState('justifyCenter');
+        } else if (cmd === 'formatBlock' && val) {
+            const block = document.queryCommandValue('formatBlock');
+            isActive = block.toLowerCase() === val.toLowerCase();
+        }
+
+        btn.classList.toggle('active', isActive);
+    });
+}
+
 // Make functions globally available
 window.editProduct = editProduct;
 window.confirmDeleteProduct = confirmDeleteProduct;
@@ -1248,3 +2269,8 @@ window.addAdditionalImage = addAdditionalImage;
 window.addVariant = addVariant;
 window.confirmDeleteGallery = confirmDeleteGallery;
 window.updateContent = updateContent;
+window.viewOrderDetails = viewOrderDetails;
+window.toggleDiscountCode = toggleDiscountCode;
+window.editPage = editPage;
+window.confirmDeletePage = confirmDeletePage;
+window.confirmDeleteSubscriber = confirmDeleteSubscriber;

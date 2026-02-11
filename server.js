@@ -215,6 +215,25 @@ app.post('/create-checkout-session', async (req, res) => {
     try {
         const { items, pickupCode } = req.body;
 
+        // Validar stock antes de crear sesión
+        if (supabaseAdmin) {
+            for (const item of items) {
+                const { data: product } = await supabaseAdmin
+                    .from('products')
+                    .select('stock, name')
+                    .eq('name', item.name)
+                    .single();
+
+                if (product && product.stock !== null && product.stock !== undefined) {
+                    if (product.stock < item.quantity) {
+                        return res.status(400).json({
+                            error: `Stock insuficiente para "${item.name}". Disponible: ${product.stock}`
+                        });
+                    }
+                }
+            }
+        }
+
         // Verificar código interno
         const isInternalOrder = pickupCode === 'GOCA';
 
@@ -337,61 +356,29 @@ app.post('/create-checkout-session', async (req, res) => {
 });
 
 // Newsletter Subscription Endpoint
-app.post('/api/subscribe', (req, res) => {
+app.post('/api/subscribe', async (req, res) => {
     const { email } = req.body;
     if (!email) {
         return res.status(400).json({ error: 'Email is required' });
     }
 
-    const filePath = path.join(__dirname, 'subscribers.txt');
-    const date = new Date().toLocaleString('es-MX');
-    const entry = `${date} - ${email}\n`;
+    try {
+        // Upsert: if email exists but was unsubscribed, reactivate it
+        const { data, error } = await supabaseAdmin
+            .from('subscribers')
+            .upsert(
+                { email: email.toLowerCase().trim(), is_active: true, unsubscribed_at: null },
+                { onConflict: 'email' }
+            )
+            .select()
+            .single();
 
-    fs.appendFile(filePath, entry, (err) => {
-        if (err) {
-            console.error('Error saving subscription:', err);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
+        if (error) throw error;
         res.json({ message: 'Subscribed successfully' });
-    });
-});
 
-// Admin View for Subscribers (Simple Password Protection)
-app.get('/admin/subscribers', (req, res) => {
-    const { pwd } = req.query;
-    if (pwd !== 'legadoadmin') { // Simple password
-        return res.status(403).send('<h1>Acceso Denegado</h1><p>Contraseña incorrecta.</p>');
-    }
-
-    const filePath = path.join(__dirname, 'subscribers.txt');
-    if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const lines = content.split('\n').filter(line => line.trim() !== '');
-
-        let html = `
-            <html>
-            <head>
-                <title>Admin - Suscriptores</title>
-                <style>
-                    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-                    h1 { color: #333; }
-                    ul { list-style: none; padding: 0; }
-                    li { background: #f4f4f4; margin: 5px 0; padding: 10px; border-radius: 4px; border-left: 4px solid #F5A84F; }
-                    .count { font-weight: bold; color: #666; }
-                </style>
-            </head>
-            <body>
-                <h1>Lista de Suscriptores</h1>
-                <p class="count">Total: ${lines.length}</p>
-                <ul>
-                    ${lines.map(line => `<li>${line}</li>`).join('')}
-                </ul>
-            </body>
-            </html>
-        `;
-        res.send(html);
-    } else {
-        res.send('<h1>No hay suscriptores aún.</h1>');
+    } catch (error) {
+        console.error('Error saving subscription:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -417,7 +404,7 @@ app.get('/verify-session/:sessionId', async (req, res) => {
                 items: session.metadata?.items ? JSON.parse(session.metadata.items) : [],
                 total: session.amount_total / 100,
                 shipping: session.total_details?.amount_shipping ? session.total_details.amount_shipping / 100 : 0,
-                status: 'pendiente',
+                status: 'pagado',
                 createdAt: new Date(),
                 paid: true
             };
@@ -481,10 +468,57 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             const session = event.data.object;
             console.log('Pago completado:', session.id);
 
-            // Aquí puedes:
-            // - Enviar email de confirmación
-            // - Actualizar inventario
-            // - Notificar al equipo
+            // Decrementar inventario
+            try {
+                if (supabaseAdmin && session.metadata?.items) {
+                    const purchasedItems = JSON.parse(session.metadata.items);
+                    for (const item of purchasedItems) {
+                        // Find product by name and decrement stock
+                        const { data: product } = await supabaseAdmin
+                            .from('products')
+                            .select('id, stock')
+                            .eq('name', item.name)
+                            .single();
+
+                        if (product && product.stock !== null && product.stock !== undefined) {
+                            const newStock = Math.max(0, product.stock - (item.quantity || 1));
+                            await supabaseAdmin
+                                .from('products')
+                                .update({ stock: newStock })
+                                .eq('id', product.id);
+                            console.log(`Stock actualizado: ${item.name} -> ${newStock}`);
+                        }
+                    }
+                }
+            } catch (stockError) {
+                console.error('Error actualizando inventario:', stockError);
+            }
+
+            // Enviar emails de confirmación
+            try {
+                const { sendOrderConfirmation, sendOrderNotification } = require('./lib/email');
+                const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+                    expand: ['line_items']
+                });
+
+                const orderForEmail = {
+                    id: `ORD-${Date.now()}`,
+                    customer: {
+                        email: fullSession.customer_details?.email,
+                        name: fullSession.customer_details?.name,
+                        address: fullSession.shipping_details?.address || {}
+                    },
+                    items: session.metadata?.items ? JSON.parse(session.metadata.items) : [],
+                    total: fullSession.amount_total / 100,
+                    shipping: fullSession.total_details?.amount_shipping ? fullSession.total_details.amount_shipping / 100 : 0
+                };
+
+                await sendOrderConfirmation(orderForEmail);
+                await sendOrderNotification(orderForEmail);
+                console.log('Emails de confirmación enviados');
+            } catch (emailError) {
+                console.error('Error enviando emails:', emailError);
+            }
             break;
 
         case 'payment_intent.succeeded':

@@ -1,90 +1,4 @@
-// Product Data - Now loaded from API
-// Fallback data in case API fails (maintains backwards compatibility)
-const fallbackProductsData = [
-    {
-        id: 1,
-        name: 'Gorra Legado',
-        price: 250,
-        category: 'gorras',
-        image: 'Fotos/optimized/gorra1 frente.png',
-        images: ['Fotos/optimized/gorra1 frente.png', 'Fotos/optimized/gorra-legado-foto2.png', 'Fotos/optimized/modelo2 gorra1.png', 'Fotos/optimized/gorra-legado-foto4.png'],
-        gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
-        description: 'Gorra de alta calidad con diseño exclusivo de Legado San José.',
-        sizes: [],
-        variants: []
-    },
-    {
-        id: 5,
-        name: 'Gorra Legado Ámbar',
-        price: 250,
-        category: 'gorras',
-        image: 'Fotos/optimized/gorra2.png',
-        images: ['Fotos/optimized/gorra2.png', 'Fotos/optimized/gorra-ambar-foto2.png', 'Fotos/optimized/modelo2 gorra ambar.png', 'Fotos/optimized/gorra-ambar-foto4.png'],
-        gradient: 'linear-gradient(135deg, #F5A84F 0%, #EDE4CE 100%)',
-        description: 'Nuevo diseño con malla transpirable en tono ámbar.',
-        sizes: [],
-        variants: []
-    },
-    {
-        id: 6,
-        name: 'Gorra Legado Verde',
-        price: 250,
-        category: 'gorras',
-        image: 'Fotos/optimized/gorra3.png',
-        images: ['Fotos/optimized/gorra3.png', 'Fotos/optimized/gorra-verde-foto1.png', 'Fotos/optimized/modelo2 gorra verde.png', 'Fotos/optimized/gorra-verde-foto2.png'],
-        gradient: 'linear-gradient(135deg, #2E8B57 0%, #000 100%)',
-        description: 'Estilo exclusivo en verde bosque para completar tu outfit.',
-        sizes: [],
-        variants: []
-    },
-    {
-        id: 2,
-        name: 'Mochila Legado',
-        price: 3000,
-        category: 'mochilas',
-        image: 'Fotos/optimized/Mochila.png',
-        images: ['Fotos/optimized/Mochila.png', 'Fotos/optimized/modelo mochila1.png', 'Fotos/optimized/modelo mochila2.png'],
-        gradient: 'linear-gradient(135deg, #64401B 0%, #EDE4CE 100%)',
-        description: 'Mochila espaciosa y resistente, ideal para el día a día.',
-        sizes: [],
-        variants: []
-    },
-    {
-        id: 3,
-        name: 'Maleta de Viaje',
-        price: 4000,
-        category: 'maletas',
-        image: 'Fotos/optimized/Maleta.png',
-        images: ['Fotos/optimized/Maleta.png', 'Fotos/optimized/foto-maleta-1.png', 'Fotos/optimized/maleta modelo2.png', 'Fotos/optimized/foto-maleta-2.png'],
-        gradient: 'linear-gradient(135deg, #000 0%, #F5A84F 100%)',
-        description: 'Maleta premium con gran capacidad y durabilidad.',
-        sizes: [],
-        variants: []
-    },
-    {
-        id: 4,
-        name: 'Playera Oficial',
-        price: 200,
-        category: 'playeras',
-        image: 'Fotos/playeras/optimized/blanco.png',
-        gradient: 'linear-gradient(135deg, #64401B 0%, #000 100%)',
-        description: 'Playera cómoda con el diseño auténtico de Legado San José.',
-        sizes: ['S', 'M', 'L'],
-        variants: [
-            { name: 'Blanca', color: '#FFFFFF', image: 'Fotos/playeras/optimized/blanco.png' },
-            { name: 'Azul Cielo', color: '#87CEEB', image: 'Fotos/playeras/optimized/azul cielo.png' },
-            { name: 'Azul Marino', color: '#000080', image: 'Fotos/playeras/optimized/azul marino.png' },
-            { name: 'Azul Rey', color: '#4169E1', image: 'Fotos/playeras/optimized/azul rey.png' },
-            { name: 'Gris', color: '#808080', image: 'Fotos/playeras/optimized/gris.png' },
-            { name: 'Hueso', color: '#F5F5DC', image: 'Fotos/playeras/optimized/hueso.png' },
-            { name: 'Lila', color: '#C8A2C8', image: 'Fotos/playeras/optimized/lila.png' },
-            { name: 'Roja', color: '#DC143C', image: 'Fotos/playeras/optimized/rojo.png' },
-            { name: 'Verde Militar', color: '#4B5320', image: 'Fotos/playeras/optimized/verde militar.png' },
-            { name: 'Verde', color: '#008000', image: 'Fotos/playeras/optimized/verde.png' },
-            { name: 'Vino', color: '#722F37', image: 'Fotos/playeras/optimized/vino.png' }
-        ]
-    }
-];
+// Product Data - Loaded from API (no fallback to avoid showing inactive products)
 
 // Cart & History Management
 function openCart() {
@@ -185,13 +99,14 @@ async function loadProductsFromAPI() {
         const data = await response.json();
         if (data && data.length > 0) {
             productsData = data;
-            console.log('✅ Products loaded from API:', productsData.length);
+            console.log('Products loaded from API:', productsData.length);
         } else {
-            throw new Error('No products in API');
+            productsData = [];
+            console.warn('No hay productos disponibles');
         }
     } catch (error) {
-        console.warn('⚠️ Could not load from API, using fallback data:', error.message);
-        productsData = fallbackProductsData;
+        console.warn('No se pudieron cargar los productos:', error.message);
+        productsData = [];
     }
 
     // Render products after loading
@@ -242,22 +157,49 @@ function renderProducts(filter = 'all') {
         ? productsData
         : productsData.filter(p => p.category === filter);
 
-    grid.innerHTML = filteredProducts.map(product => `
-        <div class="product-card" data-category="${product.category}" data-id="${product.id}">
+    if (filteredProducts.length === 0) {
+        const message = filter === 'all'
+            ? 'No hay productos disponibles por el momento. ¡Vuelve pronto!'
+            : 'No hay productos disponibles en esta categoría por el momento.';
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 80px 20px;">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" style="margin-bottom: 20px;">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 01-8 0"></path>
+                </svg>
+                <p style="font-size: 18px; color: #999; font-weight: 500;">${message}</p>
+            </div>
+        `;
+        return;
+    }
+
+    grid.innerHTML = filteredProducts.map(product => {
+        const isOutOfStock = product.stock === 0;
+        const isLowStock = product.stock !== null && product.stock !== undefined && product.stock > 0 && product.stock <= 3;
+        let stockBadge = '';
+        if (isOutOfStock) {
+            stockBadge = '<div class="product-badge stock-out">Agotado</div>';
+        } else if (isLowStock) {
+            stockBadge = `<div class="product-badge stock-low">&iexcl;Últimas ${product.stock} piezas!</div>`;
+        }
+        return `
+        <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" data-category="${product.category}" data-id="${product.id}">
             ${product.badge ? `<div class="product-badge ${product.badge}">${product.badge === 'new' ? 'Nuevo' : 'Oferta'}</div>` : ''}
-            <div class="product-image" onclick="openProductModal('${product.id}')" style="cursor: pointer;">
+            ${stockBadge}
+            <div class="product-image" onclick="${isOutOfStock ? '' : `openProductModal('${product.id}')`}" style="cursor: ${isOutOfStock ? 'default' : 'pointer'};">
                 ${product.image
-            ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+            ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover; ${isOutOfStock ? 'opacity: 0.5;' : ''}">`
             : `<div class="placeholder-product" style="background: ${product.gradient};"><span>${product.name}</span></div>`
         }
             </div>
             <div class="product-info">
                 <h3 class="product-name">${product.name}</h3>
                 <div class="product-price">$${product.price.toLocaleString('es-MX')} MXN</div>
-                <button class="buy-now-btn" onclick="openProductModal('${product.id}')">Comprar Ahora</button>
+                <button class="buy-now-btn" onclick="${isOutOfStock ? '' : `openProductModal('${product.id}')`}" ${isOutOfStock ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>${isOutOfStock ? 'Agotado' : 'Comprar Ahora'}</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // Setup Event Listeners

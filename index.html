@@ -78,35 +78,8 @@
     <section class="gallery-section">
         <div class="container">
             <h2 class="section-title reveal">Galería</h2>
-            <div class="gallery-collage">
-                <div class="gallery-item gallery-large reveal">
-                    <img src="Fotos/foto 1.jpg" alt="Rancho San José - Foto 1" class="gallery-image-real"
-                        loading="eager" fetchpriority="high">
-                </div>
-                <div class="gallery-item gallery-small reveal">
-                    <img src="Fotos/foto 2.jpg" alt="Rancho San José - Foto 2" class="gallery-image-real shift-left"
-                        loading="eager">
-                </div>
-                <div class="gallery-item gallery-small reveal">
-                    <img src="Fotos/foto 3.jpg" alt="Rancho San José - Foto 3" class="gallery-image-real zoomed"
-                        loading="eager">
-                </div>
-                <div class="gallery-item gallery-small reveal">
-                    <img src="Fotos/foto1-galeria.jpg" alt="Rancho San José - Foto 4" class="gallery-image-real"
-                        loading="eager">
-                </div>
-                <div class="gallery-item gallery-small reveal">
-                    <img src="Fotos/foto3-galeria.jpg" alt="Rancho San José - Foto 5" class="gallery-image-real"
-                        loading="eager">
-                </div>
-                <div class="gallery-item gallery-small reveal">
-                    <img src="Fotos/foto2-galeria.jpg" alt="Rancho San José - Foto 6" class="gallery-image-real"
-                        loading="eager">
-                </div>
-                <div class="gallery-item gallery-small reveal">
-                    <img src="Fotos/foto 7.jpg" alt="Rancho San José - Foto 7" class="gallery-image-real"
-                        loading="eager">
-                </div>
+            <div class="gallery-collage" id="gallery-collage">
+                <!-- Gallery images loaded dynamically from API -->
             </div>
         </div>
     </section>
@@ -157,16 +130,18 @@
             <div class="footer-grid">
                 <div class="footer-column">
                     <h3>LEGADO SAN JOSÉ</h3>
-                    <p>Tradición que se viste</p>
+                    <p id="footer-tagline">Tradición que se viste</p>
                 </div>
                 <div class="footer-column">
                     <h4>Compra</h4>
                     <ul>
                         <li><a href="productos.html">Productos</a></li>
-                        <li><a href="#">Tallas</a></li>
-                        <li><a href="#">Envíos</a></li>
-                        <li><a href="#">Devoluciones</a></li>
-                        <li><a href="#contacto">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Información</h4>
+                    <ul id="footer-pages-links">
+                        <!-- Dynamic pages loaded by content-loader.js -->
                     </ul>
                 </div>
                 <div class="footer-column">

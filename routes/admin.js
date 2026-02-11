@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { supabaseAdmin } = require('../lib/supabase');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 // Configure multer for memory storage (for image uploads)
 const upload = multer({
@@ -198,7 +199,7 @@ router.get('/products/:id', verifyAdmin, async (req, res) => {
 // POST /api/admin/products - Create new product
 router.post('/products', verifyAdmin, async (req, res) => {
     try {
-        const { name, price, category, description, image_url, images, gradient, sizes, variants, is_active } = req.body;
+        const { name, price, category, description, image_url, images, gradient, sizes, variants, is_active, stock } = req.body;
 
         if (!name || !price || !category) {
             return res.status(400).json({ error: 'Name, price, and category are required' });
@@ -214,9 +215,7 @@ router.post('/products', verifyAdmin, async (req, res) => {
 
         const newOrder = (maxOrder?.display_order || 0) + 1;
 
-        const { data, error } = await supabaseAdmin
-            .from('products')
-            .insert({
+        const productData = {
                 name,
                 price: parseInt(price),
                 category,
@@ -228,7 +227,12 @@ router.post('/products', verifyAdmin, async (req, res) => {
                 variants: variants || [],
                 display_order: newOrder,
                 is_active: is_active !== false
-            })
+        };
+        if (stock !== undefined) productData.stock = parseInt(stock);
+
+        const { data, error } = await supabaseAdmin
+            .from('products')
+            .insert(productData)
             .select()
             .single();
 
@@ -244,7 +248,7 @@ router.post('/products', verifyAdmin, async (req, res) => {
 // PUT /api/admin/products/:id - Update product
 router.put('/products/:id', verifyAdmin, async (req, res) => {
     try {
-        const { name, price, category, description, image_url, images, gradient, sizes, variants, is_active, display_order } = req.body;
+        const { name, price, category, description, image_url, images, gradient, sizes, variants, is_active, display_order, stock } = req.body;
 
         const updateData = {};
         if (name !== undefined) updateData.name = name;
@@ -258,6 +262,7 @@ router.put('/products/:id', verifyAdmin, async (req, res) => {
         if (variants !== undefined) updateData.variants = variants;
         if (is_active !== undefined) updateData.is_active = is_active;
         if (display_order !== undefined) updateData.display_order = display_order;
+        if (stock !== undefined) updateData.stock = parseInt(stock);
 
         const { data, error } = await supabaseAdmin
             .from('products')
@@ -662,12 +667,208 @@ router.put('/content/:section/:key', verifyAdmin, async (req, res) => {
     }
 });
 
+// PATCH /api/admin/gallery-reorder - Reorder gallery images
+router.patch('/gallery-reorder', verifyAdmin, async (req, res) => {
+    try {
+        const { orderedIds } = req.body;
+        if (!Array.isArray(orderedIds)) {
+            return res.status(400).json({ error: 'orderedIds must be an array' });
+        }
+        const updates = orderedIds.map((id, index) =>
+            supabaseAdmin
+                .from('gallery_images')
+                .update({ display_order: index + 1 })
+                .eq('id', id)
+        );
+        await Promise.all(updates);
+        res.json({ message: 'Gallery reordered successfully' });
+    } catch (error) {
+        console.error('Reorder gallery error:', error);
+        res.status(500).json({ error: 'Failed to reorder gallery' });
+    }
+});
+
+// ============================================
+// DISCOUNT CODES ROUTES (via Stripe API)
+// ============================================
+
+// GET /api/admin/discount-codes - List all promotion codes
+router.get('/discount-codes', verifyAdmin, async (req, res) => {
+    try {
+        const promotionCodes = await stripe.promotionCodes.list({
+            limit: 50,
+            expand: ['data.coupon']
+        });
+        res.json(promotionCodes.data);
+    } catch (error) {
+        console.error('Get discount codes error:', error);
+        res.status(500).json({ error: 'Failed to fetch discount codes' });
+    }
+});
+
+// POST /api/admin/discount-codes - Create a new promotion code
+router.post('/discount-codes', verifyAdmin, async (req, res) => {
+    try {
+        const { code, discount_type, value, max_redemptions, expires_at } = req.body;
+
+        if (!code || !discount_type || !value) {
+            return res.status(400).json({ error: 'Código, tipo y valor son requeridos' });
+        }
+
+        // Create coupon first
+        const couponData = { currency: 'mxn' };
+        if (discount_type === 'percent') {
+            couponData.percent_off = parseFloat(value);
+        } else {
+            couponData.amount_off = parseInt(value) * 100; // Convert MXN to centavos
+        }
+
+        const coupon = await stripe.coupons.create(couponData);
+
+        // Create promotion code linked to coupon
+        const promoData = {
+            coupon: coupon.id,
+            code: code.toUpperCase().trim()
+        };
+        if (max_redemptions) promoData.max_redemptions = parseInt(max_redemptions);
+        if (expires_at) promoData.expires_at = Math.floor(new Date(expires_at).getTime() / 1000);
+
+        const promotionCode = await stripe.promotionCodes.create(promoData);
+        res.status(201).json(promotionCode);
+
+    } catch (error) {
+        console.error('Create discount code error:', error);
+        res.status(500).json({ error: error.message || 'Failed to create discount code' });
+    }
+});
+
+// PATCH /api/admin/discount-codes/:id - Activate/deactivate promotion code
+router.patch('/discount-codes/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { active } = req.body;
+        const promotionCode = await stripe.promotionCodes.update(req.params.id, { active });
+        res.json(promotionCode);
+    } catch (error) {
+        console.error('Update discount code error:', error);
+        res.status(500).json({ error: 'Failed to update discount code' });
+    }
+});
+
+// ============================================
+// PAGES ROUTES
+// ============================================
+
+// GET /api/admin/pages - Get all pages (including inactive)
+router.get('/pages', verifyAdmin, async (req, res) => {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('pages')
+            .select('*')
+            .order('display_order', { ascending: true });
+
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        console.error('Get pages error:', error);
+        res.status(500).json({ error: 'Failed to fetch pages' });
+    }
+});
+
+// POST /api/admin/pages - Create a new page
+router.post('/pages', verifyAdmin, async (req, res) => {
+    try {
+        const { title, content, is_active } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ error: 'Title is required' });
+        }
+
+        // Auto-generate slug from title
+        const slug = title.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+
+        // Get max display_order
+        const { data: maxOrder } = await supabaseAdmin
+            .from('pages')
+            .select('display_order')
+            .order('display_order', { ascending: false })
+            .limit(1);
+
+        const display_order = (maxOrder && maxOrder.length > 0) ? maxOrder[0].display_order + 1 : 1;
+
+        const { data, error } = await supabaseAdmin
+            .from('pages')
+            .insert({
+                title,
+                slug,
+                content: content || '',
+                is_active: is_active !== undefined ? is_active : false,
+                display_order
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.status(201).json(data);
+
+    } catch (error) {
+        console.error('Create page error:', error);
+        res.status(500).json({ error: error.message || 'Failed to create page' });
+    }
+});
+
+// PUT /api/admin/pages/:id - Update a page
+router.put('/pages/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { title, slug, content, is_active } = req.body;
+
+        const updateData = {};
+        if (title !== undefined) updateData.title = title;
+        if (slug !== undefined) updateData.slug = slug;
+        if (content !== undefined) updateData.content = content;
+        if (is_active !== undefined) updateData.is_active = is_active;
+
+        const { data, error } = await supabaseAdmin
+            .from('pages')
+            .update(updateData)
+            .eq('id', req.params.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json(data);
+
+    } catch (error) {
+        console.error('Update page error:', error);
+        res.status(500).json({ error: 'Failed to update page' });
+    }
+});
+
+// DELETE /api/admin/pages/:id - Delete a page
+router.delete('/pages/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { error } = await supabaseAdmin
+            .from('pages')
+            .delete()
+            .eq('id', req.params.id);
+
+        if (error) throw error;
+        res.json({ message: 'Page deleted successfully' });
+
+    } catch (error) {
+        console.error('Delete page error:', error);
+        res.status(500).json({ error: 'Failed to delete page' });
+    }
+});
+
 // ============================================
 // ORDERS ROUTES
 // ============================================
 
 // GET /api/admin/orders - Get all orders
-router.get('/orders', async (req, res) => {
+router.get('/orders', verifyAdmin, async (req, res) => {
     try {
         const { data, error } = await supabaseAdmin
             .from('orders')
@@ -684,12 +885,17 @@ router.get('/orders', async (req, res) => {
 });
 
 // PATCH /api/admin/orders/:id/status - Update order status
-router.patch('/orders/:id/status', async (req, res) => {
+router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
     try {
         const { status, trackingNumber } = req.body;
 
         if (!status) {
             return res.status(400).json({ error: 'Status is required' });
+        }
+
+        const validStatuses = ['pagado', 'procesado', 'enviado', 'entregado'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ error: `Status inválido. Valores permitidos: ${validStatuses.join(', ')}` });
         }
 
         const updateData = { status };
@@ -706,13 +912,142 @@ router.patch('/orders/:id/status', async (req, res) => {
 
         if (error) throw error;
 
-        // TODO: Send email notification to user about status update?
+        // Send email notification to customer about status update
+        try {
+            const { sendStatusUpdate } = require('../lib/email');
+            await sendStatusUpdate(data, status);
+        } catch (emailError) {
+            console.error('Error sending status update email:', emailError);
+        }
 
         res.json(data);
 
     } catch (error) {
         console.error('Update order status error:', error);
         res.status(500).json({ error: 'Failed to update order status' });
+    }
+});
+
+// ============================================
+// SUBSCRIBERS ROUTES
+// ============================================
+
+// GET /api/admin/subscribers - Get all subscribers
+router.get('/subscribers', verifyAdmin, async (req, res) => {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('subscribers')
+            .select('*')
+            .order('subscribed_at', { ascending: false });
+
+        if (error) throw error;
+        res.json(data);
+
+    } catch (error) {
+        console.error('Get subscribers error:', error);
+        res.status(500).json({ error: 'Failed to fetch subscribers' });
+    }
+});
+
+// DELETE /api/admin/subscribers/:id - Delete a subscriber
+router.delete('/subscribers/:id', verifyAdmin, async (req, res) => {
+    try {
+        const { error } = await supabaseAdmin
+            .from('subscribers')
+            .delete()
+            .eq('id', req.params.id);
+
+        if (error) throw error;
+        res.json({ message: 'Subscriber deleted successfully' });
+
+    } catch (error) {
+        console.error('Delete subscriber error:', error);
+        res.status(500).json({ error: 'Failed to delete subscriber' });
+    }
+});
+
+// POST /api/admin/subscribers/send-email - Send marketing email to all active subscribers
+router.post('/subscribers/send-email', verifyAdmin, async (req, res) => {
+    try {
+        const { subject, content, headerText } = req.body;
+
+        if (!subject || !content) {
+            return res.status(400).json({ error: 'Asunto y contenido son requeridos' });
+        }
+
+        // Get all active subscribers
+        const { data: subscribers, error } = await supabaseAdmin
+            .from('subscribers')
+            .select('email')
+            .eq('is_active', true);
+
+        if (error) throw error;
+
+        if (!subscribers || subscribers.length === 0) {
+            return res.status(400).json({ error: 'No hay suscriptores activos' });
+        }
+
+        const { Resend } = require('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Legado San José <onboarding@resend.dev>';
+        const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'legadosanjosemx@gmail.com';
+
+        // Build header section (optional, customizable from admin)
+        const headerHtml = headerText
+            ? `<div style="background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); padding: 30px; text-align: center;">
+                   <h1 style="color: #F5A84F; font-size: 22px; margin: 0; letter-spacing: 4px; text-transform: uppercase; font-weight: 700;">${headerText}</h1>
+               </div>`
+            : '';
+
+        const html = `
+        <div style="max-width: 600px; margin: 0 auto; font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff;">
+            ${headerHtml}
+            <div style="padding: 30px; line-height: 1.8; color: #333;">
+                ${content}
+            </div>
+            <div style="background: #1a1a1a; padding: 20px; text-align: center;">
+                <p style="color: #888; font-size: 12px; margin: 0;">Legado San José — Tradición que se viste</p>
+                <p style="color: #666; font-size: 11px; margin: 8px 0 0;">Si ya no deseas recibir estos correos, responde con "DESUSCRIBIR".</p>
+            </div>
+        </div>
+        `;
+
+        // Send emails in batches of 50
+        const batchSize = 50;
+        let sent = 0;
+        let failed = 0;
+
+        for (let i = 0; i < subscribers.length; i += batchSize) {
+            const batch = subscribers.slice(i, i + batchSize);
+            const emails = batch.map(s => s.email);
+
+            try {
+                await resend.batch.send(
+                    emails.map(email => ({
+                        from: FROM_EMAIL,
+                        to: [email],
+                        reply_to: REPLY_TO_EMAIL,
+                        subject: subject,
+                        html: html
+                    }))
+                );
+                sent += emails.length;
+            } catch (batchError) {
+                console.error('Batch send error:', batchError);
+                failed += emails.length;
+            }
+        }
+
+        res.json({
+            message: `Emails enviados: ${sent}, fallidos: ${failed}`,
+            sent,
+            failed,
+            total: subscribers.length
+        });
+
+    } catch (error) {
+        console.error('Send marketing email error:', error);
+        res.status(500).json({ error: error.message || 'Failed to send emails' });
     }
 });
 
