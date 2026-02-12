@@ -1092,6 +1092,71 @@ input:checked + .slider:before {
     color: var(--white);
 }
 
+/* Variant Stock Grid */
+.variant-stock-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #ddd;
+}
+
+.variant-stock-section > label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-mid);
+    margin-bottom: 8px;
+}
+
+.variant-stock-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.stock-input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.stock-input-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-dark);
+    text-transform: uppercase;
+}
+
+.variant-stock-input {
+    width: 65px;
+    text-align: center;
+    padding: 6px 4px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.variant-stock-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.stock-hint {
+    color: #999;
+    font-size: 12px;
+    font-style: italic;
+    margin: 0;
+}
+
+.stock-note {
+    font-size: 11px;
+    color: var(--gray-mid);
+    font-style: italic;
+    margin-top: 4px;
+}
+
 .hidden {
     display: none !important;
 }

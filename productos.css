@@ -819,6 +819,51 @@
     box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--primary);
 }
 
+/* Variant/Size out-of-stock styles */
+.variant-btn.variant-out-of-stock {
+    opacity: 0.3;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.variant-btn.variant-out-of-stock::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -2px;
+    right: -2px;
+    height: 2px;
+    background: #e74c3c;
+    transform: rotate(-45deg);
+}
+
+.size-btn.size-out-of-stock {
+    opacity: 0.4;
+    text-decoration: line-through;
+    cursor: not-allowed;
+    position: relative;
+    color: #ccc;
+    border-color: #eee;
+}
+
+.size-btn.size-out-of-stock:hover {
+    border-color: #eee;
+    color: #ccc;
+}
+
+.size-stock-label {
+    display: block;
+    font-size: 9px;
+    color: #e74c3c;
+    margin-top: 2px;
+    font-weight: 400;
+    text-decoration: none;
+}
+
+.size-stock-label.low {
+    color: #f39c12;
+}
+
 /* Responsive - Medium screens and small heights */
 @media (max-width: 1024px), (max-height: 800px) {
     .modal-content {

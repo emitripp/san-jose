@@ -1,5 +1,44 @@
 // Product Data - Loaded from API (no fallback to avoid showing inactive products)
 
+// ============================================
+// STOCK HELPERS (variant-aware)
+// ============================================
+
+function isProductOutOfStock(product) {
+    const hasVariantStock = product.variants && product.variants.some(v => v.stock);
+    if (hasVariantStock) {
+        return product.variants.every(v => {
+            if (!v.stock) return false;
+            return Object.values(v.stock).every(qty => qty === 0);
+        });
+    }
+    return product.stock === 0;
+}
+
+function getProductTotalStock(product) {
+    const hasVariantStock = product.variants && product.variants.some(v => v.stock);
+    if (hasVariantStock) {
+        let total = 0;
+        product.variants.forEach(v => {
+            if (v.stock) {
+                Object.values(v.stock).forEach(qty => {
+                    if (qty !== null && qty !== undefined) total += qty;
+                });
+            }
+        });
+        return total;
+    }
+    return product.stock;
+}
+
+function getVariantSizeStock(product, variantName, size) {
+    if (!product.variants) return null;
+    const variant = product.variants.find(v => v.name === variantName);
+    if (!variant || !variant.stock) return null; // null = unlimited
+    const sizeStock = variant.stock[size];
+    return sizeStock !== undefined ? sizeStock : null;
+}
+
 // Cart & History Management
 function openCart() {
     const sidebar = document.getElementById('cart-sidebar');
@@ -175,13 +214,14 @@ function renderProducts(filter = 'all') {
     }
 
     grid.innerHTML = filteredProducts.map(product => {
-        const isOutOfStock = product.stock === 0;
-        const isLowStock = product.stock !== null && product.stock !== undefined && product.stock > 0 && product.stock <= 3;
+        const isOutOfStock = isProductOutOfStock(product);
+        const totalStock = getProductTotalStock(product);
+        const isLowStock = totalStock !== null && totalStock > 0 && totalStock <= 3;
         let stockBadge = '';
         if (isOutOfStock) {
             stockBadge = '<div class="product-badge stock-out">Agotado</div>';
         } else if (isLowStock) {
-            stockBadge = `<div class="product-badge stock-low">&iexcl;Últimas ${product.stock} piezas!</div>`;
+            stockBadge = `<div class="product-badge stock-low">&iexcl;Últimas ${totalStock} piezas!</div>`;
         }
         return `
         <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" data-category="${product.category}" data-id="${product.id}">
@@ -322,34 +362,31 @@ function openProductModal(productId) {
     if (product.variants && product.variants.length > 0) {
         variantGroup.style.display = 'block';
         const variantContainer = document.getElementById('variant-options'); // Need to add this to HTML
-        variantContainer.innerHTML = product.variants.map((variant, index) => `
-            <button class="variant-btn ${index === 0 ? 'active' : ''}" 
-                    data-variant="${variant.name}" 
+        variantContainer.innerHTML = product.variants.map((variant, index) => {
+            const variantAllOut = variant.stock
+                ? Object.values(variant.stock).every(qty => qty === 0)
+                : false;
+            return `
+            <button class="variant-btn ${index === 0 ? 'active' : ''} ${variantAllOut ? 'variant-out-of-stock' : ''}"
+                    data-variant="${variant.name}"
                     data-image="${variant.image || ''}"
-                    style="background-color: ${variant.color};" 
-                    title="${variant.name}"
-                    onclick="selectVariant(this)">
-            </button>
-        `).join('');
+                    style="background-color: ${variant.color};"
+                    title="${variant.name}${variantAllOut ? ' (Agotado)' : ''}"
+                    onclick="selectVariant(this)"
+                    ${variantAllOut ? 'disabled' : ''}>
+            </button>`;
+        }).join('');
     } else {
         variantGroup.style.display = 'none';
     }
 
-    // 4. Render Sizes (Separate Buttons)
+    // 4. Render Sizes (with stock awareness per variant)
     const sizeGroup = document.getElementById('size-group');
     if (product.sizes && product.sizes.length > 0) {
         sizeGroup.style.display = 'block';
-        document.getElementById('size-buttons').innerHTML = product.sizes.map(size => `
-            <button class="size-btn" data-size="${size}">${size}</button>
-        `).join('');
-
-        // Add size selection handlers
-        document.querySelectorAll('.size-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
+        const activeVariant = document.querySelector('.variant-btn.active');
+        const variantName = activeVariant ? activeVariant.dataset.variant : null;
+        updateSizeButtons(product, variantName);
     } else {
         sizeGroup.style.display = 'none';
     }
@@ -382,6 +419,49 @@ function changeMainImage(src, thumb) {
     document.getElementById('main-product-image').src = src;
     document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
     if (thumb) thumb.classList.add('active');
+}
+
+// Helper: Update size buttons with stock awareness
+function updateSizeButtons(product, selectedVariantName) {
+    const sizeGroup = document.getElementById('size-group');
+    if (!product.sizes || product.sizes.length === 0) {
+        sizeGroup.style.display = 'none';
+        return;
+    }
+
+    sizeGroup.style.display = 'block';
+    const variant = product.variants?.find(v => v.name === selectedVariantName);
+    const variantStock = variant?.stock;
+
+    document.getElementById('size-buttons').innerHTML = product.sizes.map(size => {
+        let sizeOutOfStock = false;
+        let sizeLowStock = false;
+        let sizeQty = null;
+
+        if (variantStock) {
+            sizeQty = variantStock[size];
+            sizeOutOfStock = sizeQty === 0;
+            sizeLowStock = sizeQty !== null && sizeQty > 0 && sizeQty <= 3;
+        }
+
+        return `
+            <button class="size-btn ${sizeOutOfStock ? 'size-out-of-stock' : ''}"
+                    data-size="${size}"
+                    ${sizeOutOfStock ? 'disabled' : ''}>
+                ${size}
+                ${sizeOutOfStock ? '<span class="size-stock-label">Agotado</span>' : ''}
+                ${sizeLowStock ? `<span class="size-stock-label low">¡${sizeQty} left!</span>` : ''}
+            </button>
+        `;
+    }).join('');
+
+    // Re-attach click handlers (only on enabled buttons)
+    document.querySelectorAll('.size-btn:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
 }
 
 // Helper: Select Variant
@@ -418,6 +498,9 @@ function selectVariant(btn) {
             </div>
         `).join('');
     }
+
+    // 5. Update size buttons stock for this variant
+    updateSizeButtons(product, variantName);
 }
 
 // Close Product Modal
@@ -481,6 +564,18 @@ function addToCartFromModal() {
 
         const quantityInput = document.getElementById('quantity');
         const quantity = parseInt(quantityInput.value) || 1;
+
+        // Validate stock before adding
+        const available = getVariantSizeStock(product, variant, size);
+        if (available !== null) {
+            const existingQty = cart
+                .filter(item => String(item.id) === String(productId) && item.size === size && item.variant === variant)
+                .reduce((sum, item) => sum + item.quantity, 0);
+            if (existingQty + quantity > available) {
+                alert(`Solo hay ${available} pieza(s) disponible(s) de ${variant} talla ${size}. Ya tienes ${existingQty} en el carrito.`);
+                return;
+            }
+        }
 
         // Check if item already in cart (match ID, Size, AND Variant)
         // Use loose/string comparison for ID
@@ -614,6 +709,30 @@ function updateCartUI() {
 
 // Update Cart Quantity
 function updateCartItem(index, change) {
+    const item = cart[index];
+
+    if (change > 0) {
+        // Check stock before incrementing
+        const product = productsData.find(p => String(p.id) === String(item.id));
+        if (product) {
+            const available = getVariantSizeStock(product, item.variant, item.size);
+            if (available !== null && item.quantity + change > available) {
+                alert(`Solo quedan ${available} pieza(s) de ${item.variant ? item.variant + ' ' : ''}talla ${item.size}`);
+                return;
+            }
+            // Also check product-level stock for non-variant products
+            if (available === null && product.stock !== null && product.stock !== undefined) {
+                const totalInCart = cart
+                    .filter(c => String(c.id) === String(item.id))
+                    .reduce((sum, c) => sum + c.quantity, 0);
+                if (totalInCart + change > product.stock) {
+                    alert(`Solo quedan ${product.stock} pieza(s) de ${item.name}`);
+                    return;
+                }
+            }
+        }
+    }
+
     cart[index].quantity += change;
     if (cart[index].quantity <= 0) {
         cart.splice(index, 1);

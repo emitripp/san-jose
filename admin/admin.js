@@ -290,6 +290,10 @@ function showDashboard(admin) {
     document.getElementById('admin-name').textContent = admin.name || 'Admin';
     document.getElementById('admin-email').textContent = admin.email;
 
+    // Restore last active section or default to products
+    const savedSection = localStorage.getItem('admin_active_section') || 'products';
+    switchSection(savedSection);
+
     // Load initial data
     loadCategories(); // Load categories first for product form
     loadProducts();
@@ -359,6 +363,9 @@ function switchSection(sectionName) {
     document.querySelectorAll('.section').forEach(section => {
         section.classList.toggle('active', section.id === `${sectionName}-section`);
     });
+
+    // Remember active section for page reload
+    localStorage.setItem('admin_active_section', sectionName);
 }
 
 // ============================================
@@ -429,8 +436,8 @@ function renderProducts() {
                                 <span class="product-row-name">${product.name}</span>
                                 <span class="product-row-price">$${product.price.toLocaleString('es-MX')} MXN</span>
                             </div>
-                            <span class="product-row-stock" style="font-size: 0.8rem; color: ${product.stock === 0 ? '#e74c3c' : product.stock !== null && product.stock !== undefined ? '#27ae60' : '#888'};">
-                                ${product.stock === 0 ? 'AGOTADO' : product.stock !== null && product.stock !== undefined ? product.stock + ' pzas' : 'Sin límite'}
+                            <span class="product-row-stock" style="font-size: 0.8rem; color: ${getStockColor(product)};">
+                                ${getStockDisplay(product)}
                             </span>
                             <span class="product-row-status ${product.is_active ? 'active' : 'inactive'}">
                                 ${product.is_active ? 'Activo' : 'Inactivo'}
@@ -524,6 +531,48 @@ async function saveNewOrder(container) {
 }
 
 
+// Stock display helpers
+function getStockDisplay(product) {
+    const hasVariantStock = product.variants && product.variants.some(v => v.stock);
+    if (hasVariantStock) {
+        let total = 0;
+        let allZero = true;
+        product.variants.forEach(v => {
+            if (v.stock) {
+                Object.values(v.stock).forEach(qty => {
+                    if (qty !== null && qty !== undefined) {
+                        total += qty;
+                        if (qty > 0) allZero = false;
+                    } else {
+                        allZero = false; // null = unlimited
+                    }
+                });
+            }
+        });
+        if (allZero && total === 0) return 'AGOTADO';
+        return total + ' pzas (variantes)';
+    }
+    if (product.stock === 0) return 'AGOTADO';
+    if (product.stock !== null && product.stock !== undefined) return product.stock + ' pzas';
+    return 'Sin límite';
+}
+
+function getStockColor(product) {
+    const hasVariantStock = product.variants && product.variants.some(v => v.stock);
+    if (hasVariantStock) {
+        const allZero = product.variants.every(v => {
+            if (!v.stock) return false;
+            return Object.values(v.stock).every(qty => qty === 0);
+        });
+        if (allZero) return '#e74c3c';
+        const anyZero = product.variants.some(v => v.stock && Object.values(v.stock).some(qty => qty === 0));
+        return anyZero ? '#e67e22' : '#27ae60';
+    }
+    if (product.stock === 0) return '#e74c3c';
+    if (product.stock !== null && product.stock !== undefined) return '#27ae60';
+    return '#888';
+}
+
 function openProductModal(product = null) {
     const modal = document.getElementById('product-modal');
     const form = document.getElementById('product-form');
@@ -567,11 +616,32 @@ function openProductModal(product = null) {
         // Load variants
         if (product.variants && product.variants.length > 0) {
             product.variants.forEach(v => addVariant(v));
+
+            // Populate existing stock values into the inputs
+            setTimeout(() => {
+                const variantItems = document.querySelectorAll('.variant-item');
+                product.variants.forEach((v, idx) => {
+                    if (v.stock && variantItems[idx]) {
+                        Object.entries(v.stock).forEach(([size, qty]) => {
+                            const input = variantItems[idx].querySelector(`.variant-stock-input[data-size="${size}"]`);
+                            if (input) {
+                                input.value = qty !== null && qty !== undefined ? qty : '';
+                            }
+                        });
+                    }
+                });
+            }, 50);
         }
     } else {
         title.textContent = 'Nuevo Producto';
     }
 
+    // Listen for sizes changes to update stock grids
+    const sizesInput = document.getElementById('product-sizes');
+    sizesInput.removeEventListener('blur', updateVariantStockGrids);
+    sizesInput.addEventListener('blur', updateVariantStockGrids);
+
+    toggleGlobalStock();
     modal.classList.add('active');
 }
 
@@ -590,6 +660,9 @@ async function handleProductSubmit(e) {
 
     // Gather form data
     const stockValue = document.getElementById('product-stock').value;
+    const variants = getVariants();
+    const hasVariantStock = variants.some(v => v.stock);
+
     const productData = {
         name: document.getElementById('product-name').value,
         price: parseInt(document.getElementById('product-price').value),
@@ -602,8 +675,9 @@ async function handleProductSubmit(e) {
             .split(',')
             .map(s => s.trim())
             .filter(s => s),
-        variants: getVariants(),
-        stock: stockValue !== '' ? parseInt(stockValue) : null
+        variants: variants,
+        // Si hay stock por variante, ignorar stock global
+        stock: hasVariantStock ? null : (stockValue !== '' ? parseInt(stockValue) : null)
     };
 
     try {
@@ -789,7 +863,7 @@ function addVariant(data = null) {
                 <label>Color</label>
                 <input type="color" class="variant-color" value="${data?.color || '#000000'}">
             </div>
-            <button type="button" class="remove-variant" onclick="this.parentElement.parentElement.remove()">×</button>
+            <button type="button" class="remove-variant" onclick="this.parentElement.parentElement.remove(); toggleGlobalStock();">×</button>
         </div>
         <div class="variant-image-section">
             <label>Imagen de variante</label>
@@ -809,12 +883,21 @@ function addVariant(data = null) {
             </div>
             <input type="hidden" class="variant-image" value="${data?.image || ''}">
         </div>
+        <div class="variant-stock-section">
+            <label>Stock por Talla</label>
+            <div class="variant-stock-grid" data-variant-id="${variantId}">
+                <p class="stock-hint">Configura las tallas del producto primero</p>
+            </div>
+        </div>
     `;
     container.appendChild(item);
 
     // Add event listener for image upload
     const imageInput = item.querySelector(`#variant-input-${variantId}`);
     imageInput.addEventListener('change', (e) => handleVariantImageUpload(e, variantId));
+
+    // Update stock grid with current sizes
+    updateVariantStockGrids();
 }
 
 async function handleVariantImageUpload(e, variantId) {
@@ -874,6 +957,53 @@ function removeVariantImage(variantId) {
     }
 }
 
+function updateVariantStockGrids() {
+    const sizesValue = document.getElementById('product-sizes').value;
+    const sizes = sizesValue.split(',').map(s => s.trim()).filter(s => s);
+
+    document.querySelectorAll('.variant-stock-grid').forEach(grid => {
+        // Preserve existing values
+        const existingValues = {};
+        grid.querySelectorAll('.variant-stock-input').forEach(input => {
+            existingValues[input.dataset.size] = input.value;
+        });
+
+        if (sizes.length === 0) {
+            grid.innerHTML = '<p class="stock-hint">Configura las tallas del producto primero</p>';
+            return;
+        }
+
+        grid.innerHTML = sizes.map(size => `
+            <div class="stock-input-group">
+                <label>${size}</label>
+                <input type="number" class="variant-stock-input"
+                       data-size="${size}"
+                       min="0"
+                       placeholder="∞"
+                       value="${existingValues[size] !== undefined ? existingValues[size] : ''}">
+            </div>
+        `).join('');
+    });
+
+    // Toggle global stock visibility
+    toggleGlobalStock();
+}
+
+function toggleGlobalStock() {
+    const hasVariants = document.querySelectorAll('.variant-item').length > 0;
+    const stockGroup = document.getElementById('product-stock-group');
+    const stockNote = document.getElementById('stock-variant-note');
+    if (stockGroup) {
+        if (hasVariants) {
+            stockGroup.style.opacity = '0.5';
+            if (stockNote) stockNote.style.display = 'block';
+        } else {
+            stockGroup.style.opacity = '1';
+            if (stockNote) stockNote.style.display = 'none';
+        }
+    }
+}
+
 function getVariants() {
     const variants = [];
     document.querySelectorAll('.variant-item').forEach(item => {
@@ -882,7 +1012,25 @@ function getVariants() {
         const image = item.querySelector('.variant-image').value;
 
         if (name) {
-            variants.push({ name, color, image });
+            // Build stock object from size inputs
+            const stock = {};
+            let hasStock = false;
+            item.querySelectorAll('.variant-stock-input').forEach(input => {
+                const size = input.dataset.size;
+                const value = input.value.trim();
+                if (value !== '') {
+                    stock[size] = parseInt(value);
+                    hasStock = true;
+                } else {
+                    stock[size] = null; // unlimited
+                }
+            });
+
+            const variant = { name, color, image };
+            if (hasStock) {
+                variant.stock = stock;
+            }
+            variants.push(variant);
         }
     });
     return variants;

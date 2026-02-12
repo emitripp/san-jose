@@ -90,7 +90,14 @@ app.use(async (req, res, next) => {
 
 // General Middleware
 app.use(cors());
-app.use(express.json());
+// Exclude /webhook from JSON parsing — Stripe needs the raw body for signature verification
+app.use((req, res, next) => {
+    if (req.originalUrl === '/webhook') {
+        next();
+    } else {
+        express.json()(req, res, next);
+    }
+});
 
 // Main Static delivery
 app.use(express.static('.'));
@@ -220,11 +227,28 @@ app.post('/create-checkout-session', async (req, res) => {
             for (const item of items) {
                 const { data: product } = await supabaseAdmin
                     .from('products')
-                    .select('stock, name')
+                    .select('id, stock, name, variants')
                     .eq('name', item.name)
                     .single();
 
-                if (product && product.stock !== null && product.stock !== undefined) {
+                if (!product) continue;
+
+                const hasVariantStock = product.variants && product.variants.some(v => v.stock);
+
+                if (hasVariantStock && item.variant) {
+                    // Stock por variante/talla
+                    const variant = product.variants.find(v => v.name === item.variant);
+                    if (variant && variant.stock) {
+                        const sizeKey = item.size || '_default';
+                        const sizeStock = variant.stock[sizeKey];
+                        if (sizeStock !== null && sizeStock !== undefined && sizeStock < item.quantity) {
+                            return res.status(400).json({
+                                error: `Stock insuficiente para "${item.name}" (${item.variant}, Talla ${item.size}). Disponible: ${sizeStock}`
+                            });
+                        }
+                    }
+                } else if (product.stock !== null && product.stock !== undefined) {
+                    // Stock general del producto
                     if (product.stock < item.quantity) {
                         return res.status(400).json({
                             error: `Stock insuficiente para "${item.name}". Disponible: ${product.stock}`
@@ -399,75 +423,50 @@ app.post('/api/subscribe', async (req, res) => {
 app.get('/verify-session/:sessionId', async (req, res) => {
     try {
         const session = await stripe.checkout.sessions.retrieve(req.params.sessionId, {
-            expand: ['line_items', 'customer']
+            expand: ['line_items']
         });
 
-        console.log('Session retrieved:', session.payment_status);
-
         if (session.payment_status === 'paid') {
-            // Extraer RFC de custom_fields
-            const rfcField = session.custom_fields?.find(f => f.key === 'rfc');
-            const rfc = rfcField?.text?.value || '';
-
             const items = session.metadata?.items ? JSON.parse(session.metadata.items) : [];
             const totalCents = session.amount_total || 0;
             const shippingCents = session.total_details?.amount_shipping || 0;
-            const subtotalCents = totalCents - shippingCents;
 
-            // Guardar pedido (campos coinciden con schema de DB)
-            const orderData = {
-                stripe_session_id: req.params.sessionId,
-                customer: {
-                    email: session.customer_details?.email || 'No disponible',
-                    name: session.customer_details?.name || 'Cliente',
-                    phone: session.customer_details?.phone || '',
-                    rfc: rfc,
-                    address: session.shipping_details?.address || session.customer_details?.address || {}
-                },
-                items: items,
-                subtotal: subtotalCents,
-                shipping: shippingCents,
-                total: totalCents,
-                status: 'pagado'
+            const rfcField = session.custom_fields?.find(f => f.key === 'rfc');
+            const rfc = rfcField?.text?.value || '';
+
+            const customer = {
+                email: session.customer_details?.email || 'No disponible',
+                name: session.customer_details?.name || 'Cliente',
+                phone: session.customer_details?.phone || '',
+                rfc: rfc,
+                address: session.shipping_details?.address || {}
             };
 
-            // Save to Supabase (upsert para no duplicar si webhook ya lo creó)
-            let savedOrder = null;
+            // Buscar la orden creada por el webhook para obtener el número de pedido
+            let orderNumber = 'Procesando...';
             if (supabaseAdmin) {
-                const { data: existing } = await supabaseAdmin
-                    .from('orders')
-                    .select('id, order_number')
-                    .eq('stripe_session_id', req.params.sessionId)
-                    .single();
-
-                if (existing) {
-                    savedOrder = existing;
-                    console.log('Order already exists (created by webhook):', existing.id);
-                } else {
-                    const { data, error: dbError } = await supabaseAdmin
+                // Intentar hasta 3 veces con espera, por si el webhook aún no termina
+                for (let i = 0; i < 3; i++) {
+                    const { data: order } = await supabaseAdmin
                         .from('orders')
-                        .insert(orderData)
-                        .select()
+                        .select('order_number')
+                        .eq('stripe_session_id', req.params.sessionId)
                         .single();
 
-                    if (dbError) {
-                        console.error('Error saving order to Supabase:', dbError);
-                    } else {
-                        savedOrder = data;
-                        console.log('Order saved to Supabase:', data.id);
+                    if (order?.order_number) {
+                        orderNumber = `LSJ-${String(order.order_number).padStart(5, '0')}`;
+                        break;
                     }
+                    // Esperar 1 segundo antes de reintentar
+                    if (i < 2) await new Promise(r => setTimeout(r, 1000));
                 }
             }
-
-            const orderNumber = savedOrder?.order_number
-                ? `LSJ-${String(savedOrder.order_number).padStart(5, '0')}`
-                : savedOrder?.id || 'N/A';
 
             res.json({
                 success: true,
                 order: {
                     id: orderNumber,
-                    customer: orderData.customer,
+                    customer: customer,
                     items: items,
                     total: totalCents / 100,
                     shipping: shippingCents / 100,
@@ -557,7 +556,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                     } else {
                         savedOrderId = data.id;
                         savedOrderNumber = data.order_number;
-                        console.log('Order saved to Supabase:', savedOrderId, 'Number:', savedOrderNumber);
+                        console.log('Orden guardada:', savedOrderId, 'Número:', savedOrderNumber);
                     }
                 }
             } catch (orderError) {
@@ -570,11 +569,29 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                     for (const item of items) {
                         const { data: product } = await supabaseAdmin
                             .from('products')
-                            .select('id, stock')
+                            .select('id, stock, variants')
                             .eq('name', item.name)
                             .single();
 
-                        if (product && product.stock !== null && product.stock !== undefined) {
+                        if (!product) continue;
+
+                        const hasVariantStock = product.variants && product.variants.some(v => v.stock);
+
+                        if (hasVariantStock && item.variant) {
+                            // Decremento atómico por variante/talla via función SQL
+                            const { error: rpcError } = await supabaseAdmin.rpc('decrement_variant_stock', {
+                                p_product_id: product.id,
+                                p_variant_name: item.variant,
+                                p_size: item.size || '_default',
+                                p_quantity: item.quantity || 1
+                            });
+                            if (rpcError) {
+                                console.error(`Error decrementando stock variante: ${item.name} ${item.variant} ${item.size}`, rpcError);
+                            } else {
+                                console.log(`Stock variante actualizado: ${item.name} - ${item.variant} - ${item.size}`);
+                            }
+                        } else if (product.stock !== null && product.stock !== undefined) {
+                            // Decremento stock general
                             const newStock = Math.max(0, product.stock - (item.quantity || 1));
                             await supabaseAdmin
                                 .from('products')
@@ -604,7 +621,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
                 await sendOrderConfirmation(orderForEmail);
                 await sendOrderNotification(orderForEmail);
-                console.log('Emails de confirmación enviados');
+                console.log('Emails enviados para orden:', emailOrderNumber);
             } catch (emailError) {
                 console.error('Error enviando emails:', emailError);
             }
