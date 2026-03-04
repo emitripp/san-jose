@@ -250,7 +250,9 @@ app.post('/api/shipping/rates', async (req, res) => {
         };
 
         const packages = skydropx.selectBox(items);
+        console.log('📦 Shipping quote request:', { postalCode, destination, packages });
         const { quotationId, rates } = await skydropx.getRates(postalCode, destination, packages);
+        console.log('📦 Skydropx rates:', JSON.stringify(rates, null, 2));
 
         if (!rates.length) {
             return res.status(404).json({ error: 'No se encontraron tarifas para ese código postal' });
