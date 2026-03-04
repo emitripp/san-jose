@@ -70,6 +70,8 @@ function closeCartUI() {
     if (sidebar) sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('open');
     document.body.classList.remove('no-scroll');
+    // Reset to cart view so reopening shows the cart, not shipping
+    showCartView();
 }
 
 // Global Back Button Handler (Swipe on Mobile)
@@ -753,7 +755,11 @@ function saveCart() {
     localStorage.setItem('legado_cart', JSON.stringify(cart));
 }
 
-// Proceed to Checkout (will integrate with Stripe)
+// --- Shipping state ---
+let shippingQuoteToken = null;
+let shippingSelectedRateId = null;
+
+// Proceed to Checkout
 async function proceedToCheckout() {
     if (cart.length === 0) {
         alert('Tu carrito está vacío');
@@ -776,30 +782,169 @@ async function proceedToCheckout() {
         });
     }
 
-    // Mostrar loading en el botón
-    const checkoutBtn = document.getElementById('checkout-btn');
-    const originalText = checkoutBtn.textContent;
-    checkoutBtn.textContent = 'Procesando...';
-    checkoutBtn.disabled = true;
+    const pickupCode = document.getElementById('internal-code')?.value.trim();
+    if (pickupCode === 'GOCA') {
+        // Internal order: go straight to Stripe
+        const checkoutBtn = document.getElementById('checkout-btn');
+        checkoutBtn.textContent = 'Procesando...';
+        checkoutBtn.disabled = true;
+        try {
+            await createStripeCheckoutSession();
+        } catch (error) {
+            checkoutBtn.textContent = 'Proceder al Pago';
+            checkoutBtn.disabled = false;
+        }
+    } else {
+        // Normal order: show shipping view inside sidebar
+        showShippingView();
+    }
+}
+
+function showShippingView() {
+    shippingQuoteToken = null;
+    shippingSelectedRateId = null;
+    // Reset shipping form
+    document.getElementById('shipping-rates').innerHTML = '';
+    document.getElementById('shipping-error').style.display = 'none';
+    document.getElementById('shipping-loading').style.display = 'none';
+    document.getElementById('shipping-continue-btn').style.display = 'none';
+    document.getElementById('shipping-postal-code').value = '';
+    document.getElementById('shipping-state').value = '';
+    document.getElementById('shipping-city').value = '';
+    document.getElementById('shipping-neighborhood').value = '';
+    // Switch views
+    document.getElementById('cart-main-view').style.display = 'none';
+    document.getElementById('cart-shipping-view').style.display = 'block';
+    document.getElementById('cart-title').textContent = 'Calcular Envío';
+    document.getElementById('cart-back').style.display = 'flex';
+    document.getElementById('shipping-postal-code').focus();
+}
+
+function showCartView() {
+    document.getElementById('cart-shipping-view').style.display = 'none';
+    document.getElementById('cart-main-view').style.display = 'flex';
+    document.getElementById('cart-title').textContent = 'Carrito de Compras';
+    document.getElementById('cart-back').style.display = 'none';
+}
+
+async function fetchShippingRates() {
+    const postalCode = document.getElementById('shipping-postal-code').value.trim();
+    const state = document.getElementById('shipping-state').value;
+    const city = document.getElementById('shipping-city').value.trim();
+    const neighborhood = document.getElementById('shipping-neighborhood').value.trim();
+
+    const errorEl = document.getElementById('shipping-error');
+    const loadingEl = document.getElementById('shipping-loading');
+    const ratesEl = document.getElementById('shipping-rates');
+    const continueBtn = document.getElementById('shipping-continue-btn');
+
+    if (!/^\d{5}$/.test(postalCode)) {
+        errorEl.textContent = 'Ingresa un código postal válido (5 dígitos)';
+        errorEl.style.display = 'block';
+        return;
+    }
+    if (!state) {
+        errorEl.textContent = 'Selecciona un estado';
+        errorEl.style.display = 'block';
+        return;
+    }
+    if (!city) {
+        errorEl.textContent = 'Ingresa la ciudad o municipio';
+        errorEl.style.display = 'block';
+        return;
+    }
+    if (!neighborhood) {
+        errorEl.textContent = 'Ingresa la colonia';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    errorEl.style.display = 'none';
+    ratesEl.innerHTML = '';
+    continueBtn.style.display = 'none';
+    loadingEl.style.display = 'block';
+
+    try {
+        const res = await fetch('/api/shipping/rates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                postalCode,
+                state,
+                city,
+                neighborhood,
+                items: cart.map(i => ({ name: i.name, quantity: i.quantity }))
+            })
+        });
+
+        const data = await res.json();
+        loadingEl.style.display = 'none';
+
+        if (!res.ok) {
+            errorEl.textContent = data.error || 'Error al cotizar envío';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        shippingQuoteToken = data.quoteToken;
+        renderShippingRates(data.rates, data.fallback);
+    } catch (err) {
+        loadingEl.style.display = 'none';
+        errorEl.textContent = 'Error de conexión. Intenta de nuevo.';
+        errorEl.style.display = 'block';
+    }
+}
+
+function renderShippingRates(rates, isFallback) {
+    const ratesEl = document.getElementById('shipping-rates');
+    if (!rates.length) {
+        ratesEl.innerHTML = '<p style="text-align:center;color:#888;">No hay tarifas disponibles para ese código postal.</p>';
+        return;
+    }
+
+    ratesEl.innerHTML = rates.map(rate => `
+        <div class="shipping-rate-card" data-rate-id="${rate.id}" onclick="selectShippingRate('${rate.id}')">
+            <div class="rate-info">
+                <h4>${rate.carrier}</h4>
+                <p>${rate.service}</p>
+            </div>
+            <div class="rate-price">
+                <div class="price">$${rate.price.toLocaleString('es-MX')} MXN</div>
+                ${rate.days ? `<div class="days">${rate.days} día${rate.days > 1 ? 's' : ''} hábil${rate.days > 1 ? 'es' : ''}</div>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectShippingRate(rateId) {
+    shippingSelectedRateId = rateId;
+    document.querySelectorAll('.shipping-rate-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.rateId === rateId);
+    });
+    document.getElementById('shipping-continue-btn').style.display = 'block';
+}
+
+async function continueToStripeFromShipping() {
+    if (!shippingSelectedRateId) return;
+
+    const continueBtn = document.getElementById('shipping-continue-btn');
+    continueBtn.textContent = 'Procesando...';
+    continueBtn.disabled = true;
 
     try {
         await createStripeCheckoutSession();
     } catch (error) {
-        // Restaurar botón si hay error
-        checkoutBtn.textContent = originalText;
-        checkoutBtn.disabled = false;
+        continueBtn.textContent = 'Continuar al Pago';
+        continueBtn.disabled = false;
     }
 }
 
 // Stripe Integration Function
 async function createStripeCheckoutSession() {
     try {
-        // Llamar al backend para crear una sesión de Stripe Checkout
         const response = await fetch('/create-checkout-session', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 items: cart.map(item => ({
                     name: item.name,
@@ -808,7 +953,9 @@ async function createStripeCheckoutSession() {
                     size: item.size,
                     variant: item.variant || null
                 })),
-                pickupCode: document.getElementById('internal-code')?.value.trim()
+                pickupCode: document.getElementById('internal-code')?.value.trim(),
+                quoteToken: shippingQuoteToken,
+                selectedRateId: shippingSelectedRateId
             })
         });
 
@@ -818,26 +965,36 @@ async function createStripeCheckoutSession() {
         }
 
         const { sessionId } = await response.json();
-
-        // Obtener la clave pública del backend
         const configResponse = await fetch('/config');
         const { publishableKey } = await configResponse.json();
-
-        // Inicializar Stripe con la clave dinámica
         const stripe = Stripe(publishableKey);
-
-        // Redirigir a Stripe Checkout
         const { error } = await stripe.redirectToCheckout({ sessionId });
-
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
     } catch (error) {
         console.error('Error:', error);
         alert(`Error: ${error.message}`);
         throw error;
     }
 }
+
+// Shipping view event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('cart-back')?.addEventListener('click', showCartView);
+    document.getElementById('shipping-continue-btn')?.addEventListener('click', continueToStripeFromShipping);
+    document.getElementById('shipping-search-btn')?.addEventListener('click', fetchShippingRates);
+
+    // Allow Enter key on any shipping field to trigger search
+    document.querySelectorAll('#shipping-postal-code, #shipping-city, #shipping-neighborhood').forEach(el => {
+        el?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fetchShippingRates();
+        });
+    });
+
+    // Numeric-only input for postal code
+    document.getElementById('shipping-postal-code')?.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+    });
+});
 
 // Smooth scroll for navigation
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {

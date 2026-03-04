@@ -927,7 +927,7 @@ router.get('/orders', verifyAdmin, async (req, res) => {
 // PATCH /api/admin/orders/:id/status - Update order status
 router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
     try {
-        const { status, trackingNumber } = req.body;
+        const { status, trackingNumber, trackingUrl, labelUrl } = req.body;
 
         if (!status) {
             return res.status(400).json({ error: 'Status is required' });
@@ -939,9 +939,9 @@ router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
         }
 
         const updateData = { status };
-        if (trackingNumber) {
-            updateData.tracking_number = trackingNumber;
-        }
+        if (trackingNumber) updateData.tracking_number = trackingNumber;
+        if (trackingUrl) updateData.tracking_url = trackingUrl;
+        if (labelUrl) updateData.label_url = labelUrl;
 
         const { data, error } = await supabaseAdmin
             .from('orders')
@@ -965,6 +965,125 @@ router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
     } catch (error) {
         console.error('Update order status error:', error);
         res.status(500).json({ error: 'Failed to update order status' });
+    }
+});
+
+// POST /api/admin/orders/:id/shipping-rates - Get shipping rates for an order
+router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
+    try {
+        const skydropx = require('../lib/skydropx');
+        if (!skydropx.isConfigured()) {
+            return res.status(400).json({ error: 'Skydropx no está configurado' });
+        }
+
+        const { data: order, error } = await supabaseAdmin
+            .from('orders')
+            .select('*')
+            .eq('id', req.params.id)
+            .single();
+        if (error || !order) return res.status(404).json({ error: 'Orden no encontrada' });
+
+        const postalCode = order.destination_postal_code || order.customer?.address?.postal_code;
+        if (!postalCode) return res.status(400).json({ error: 'La orden no tiene código postal' });
+
+        const addr = order.customer?.address || {};
+        const destination = {
+            area_level1: addr.state || '',
+            area_level2: addr.city || '',
+            area_level3: addr.line2 || addr.line1 || ''
+        };
+
+        const packages = order.shipping_packages || skydropx.selectBox(order.items || []);
+        const { quotationId, rates } = await skydropx.getRates(postalCode, destination, packages);
+        res.json({ quotationId, rates, packages });
+    } catch (error) {
+        console.error('Shipping rates error:', error);
+        res.status(500).json({ error: 'Error al cotizar: ' + error.message });
+    }
+});
+
+// POST /api/admin/orders/:id/generate-label - Generate shipping label
+router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
+    try {
+        const skydropx = require('../lib/skydropx');
+        const { rateId } = req.body;
+        if (!rateId) return res.status(400).json({ error: 'rateId es requerido' });
+
+        const { data: order, error } = await supabaseAdmin
+            .from('orders')
+            .select('*')
+            .eq('id', req.params.id)
+            .single();
+        if (error || !order) return res.status(404).json({ error: 'Orden no encontrada' });
+
+        const addr = order.customer?.address || {};
+        const destination = {
+            name: order.customer?.name || 'Cliente',
+            street1: [addr.line1, addr.line2].filter(Boolean).join(', ') || 'Sin dirección',
+            city: addr.city || '',
+            province: addr.state || '',
+            zip: addr.postal_code || order.destination_postal_code || '',
+            phone: order.customer?.phone || '',
+            email: order.customer?.email || ''
+        };
+
+        const parcels = order.shipping_packages || skydropx.selectBox(order.items || []);
+        const result = await skydropx.generateLabel(rateId, destination, parcels);
+
+        // Update order with tracking info
+        const updateData = {
+            status: 'enviado',
+            tracking_number: result.trackingNumber,
+            tracking_url: result.trackingUrl,
+            label_url: result.labelUrl,
+            shipment_id: result.shipmentId
+        };
+
+        await supabaseAdmin.from('orders').update(updateData).eq('id', req.params.id);
+
+        // Send email to customer
+        try {
+            const { sendStatusUpdate } = require('../lib/email');
+            await sendStatusUpdate({ ...order, ...updateData }, 'enviado');
+        } catch (emailError) {
+            console.error('Error sending shipping email:', emailError);
+        }
+
+        res.json(result);
+    } catch (error) {
+        console.error('Generate label error:', error);
+        res.status(500).json({ error: 'Error al generar guía: ' + error.message });
+    }
+});
+
+// POST /api/admin/orders/:id/cancel-shipment - Cancel shipment
+router.post('/orders/:id/cancel-shipment', verifyAdmin, async (req, res) => {
+    try {
+        const skydropx = require('../lib/skydropx');
+        const { data: order, error } = await supabaseAdmin
+            .from('orders')
+            .select('shipment_id')
+            .eq('id', req.params.id)
+            .single();
+
+        if (error || !order?.shipment_id) {
+            return res.status(400).json({ error: 'No hay envío para cancelar' });
+        }
+
+        await skydropx.cancelShipment(order.shipment_id);
+
+        await supabaseAdmin.from('orders').update({
+            status: 'procesado',
+            tracking_number: null,
+            tracking_url: null,
+            label_url: null,
+            shipment_id: null
+        }).eq('id', req.params.id);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Cancel shipment error:', error);
+        res.status(500).json({ error: 'Error al cancelar: ' + error.message });
     }
 });
 

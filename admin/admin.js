@@ -1761,7 +1761,7 @@ function renderOrders() {
                 const orderNum = order.order_number ? `LSJ-${String(order.order_number).padStart(5, '0')}` : order.id.substring(0, 8);
                 return `
                 <div class="order-row" data-id="${order.id}">
-                    <span class="order-id" style="font-weight: 600; font-family: monospace;">${orderNum}</span>
+                    <span class="order-id" style="font-weight: 600; font-family: monospace;">${orderNum}${order.label_url ? ' 📦' : ''}</span>
                     <span class="order-customer">
                         <strong>${customer.name || 'N/A'}</strong><br>
                         <small>${customer.email || ''}</small>
@@ -1844,7 +1844,9 @@ function viewOrderDetails(orderId) {
             ${customer.rfc ? `<p><strong>RFC:</strong> ${customer.rfc}</p>` : ''}
             ${addressStr ? `<p><strong>Dirección:</strong> ${addressStr}</p>` : ''}
             <p><strong>Estado:</strong> ${(order.status || 'pendiente').toUpperCase()}</p>
-            ${order.tracking_number ? `<p><strong>Rastreo:</strong> ${order.tracking_number}</p>` : ''}
+            ${order.shipping_carrier ? `<p><strong>Paquetería:</strong> ${order.shipping_carrier}${order.shipping_service ? ' - ' + order.shipping_service : ''}</p>` : ''}
+            ${order.tracking_number ? `<p><strong>Rastreo:</strong> ${order.tracking_url ? `<a href="${order.tracking_url}" target="_blank" style="color: #F5A84F;">${order.tracking_number}</a>` : order.tracking_number}</p>` : ''}
+            ${order.label_url ? `<p><a href="${order.label_url}" target="_blank" style="color: #7c3aed; font-weight: 600;">📄 Descargar Guía PDF</a></p>` : ''}
             <hr style="margin: 12px 0;">
             <p><strong>Productos:</strong></p>
             <ul style="margin: 8px 0; padding-left: 20px;">
@@ -1856,6 +1858,13 @@ function viewOrderDetails(orderId) {
             <hr style="margin: 12px 0;">
             <p><strong>Envío:</strong> $${shippingDisplay.toLocaleString('es-MX')} MXN</p>
             <p style="font-size: 1.1rem;"><strong>Total: $${totalDisplay.toLocaleString('es-MX')} MXN</strong></p>
+            ${!order.label_url && ['pagado', 'procesado'].includes(order.status) ? `
+            <hr style="margin: 12px 0;">
+            <button onclick="openGenerateLabelModal('${order.id}')" style="background: #7c3aed; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%;">📦 Generar Guía de Envío</button>
+            ` : ''}
+            ${order.shipment_id ? `
+            <button onclick="cancelOrderShipment('${order.id}')" style="background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; width: 100%;">Cancelar Guía</button>
+            ` : ''}
         </div>
     `;
 
@@ -2457,3 +2466,89 @@ window.toggleDiscountCode = toggleDiscountCode;
 window.editPage = editPage;
 window.confirmDeletePage = confirmDeletePage;
 window.confirmDeleteSubscriber = confirmDeleteSubscriber;
+window.openGenerateLabelModal = openGenerateLabelModal;
+window.generateShippingLabel = generateShippingLabel;
+window.cancelOrderShipment = cancelOrderShipment;
+
+// ============================================
+// SHIPPING LABEL GENERATION
+// ============================================
+
+async function openGenerateLabelModal(orderId) {
+    document.getElementById('confirm-title').textContent = 'Generar Guía de Envío';
+    document.getElementById('confirm-message').innerHTML = '<p style="text-align:center;">Consultando tarifas...</p>';
+    document.getElementById('confirm-delete-btn').style.display = 'none';
+    document.getElementById('confirm-modal').classList.add('active');
+
+    try {
+        const res = await fetch(`${API_BASE}/orders/${orderId}/shipping-rates`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        const ratesHtml = data.rates.map(rate => `
+            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>${rate.carrier}</strong> - ${rate.service}
+                    ${rate.days ? `<br><small style="color: #888;">${rate.days} días hábiles</small>` : ''}
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-weight: 700;">$${rate.price.toLocaleString('es-MX')} MXN</div>
+                    <button onclick="generateShippingLabel('${orderId}', '${rate.id}')" style="background: #7c3aed; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; margin-top: 4px; font-size: 0.85rem;">Generar</button>
+                </div>
+            </div>
+        `).join('');
+
+        document.getElementById('confirm-message').innerHTML = `
+            <div style="max-width: 450px;">
+                <p style="margin-bottom: 12px;">Selecciona la paquetería para generar la guía:</p>
+                ${ratesHtml}
+            </div>
+        `;
+    } catch (error) {
+        document.getElementById('confirm-message').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
+}
+
+async function generateShippingLabel(orderId, rateId) {
+    document.getElementById('confirm-message').innerHTML = '<p style="text-align:center;">Generando guía...</p>';
+
+    try {
+        const res = await fetch(`${API_BASE}/orders/${orderId}/generate-label`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rateId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        document.getElementById('confirm-modal').classList.remove('active');
+        showToast('Guía generada exitosamente');
+
+        if (data.labelUrl) window.open(data.labelUrl, '_blank');
+        loadOrders();
+    } catch (error) {
+        document.getElementById('confirm-message').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+    }
+}
+
+async function cancelOrderShipment(orderId) {
+    if (!confirm('¿Cancelar la guía de envío?')) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/orders/${orderId}/cancel-shipment`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        showToast('Guía cancelada');
+        document.getElementById('confirm-modal').classList.remove('active');
+        loadOrders();
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}

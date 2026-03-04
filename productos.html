@@ -87,7 +87,12 @@
     <!-- Cart Sidebar -->
     <div class="cart-sidebar" id="cart-sidebar">
         <div class="cart-header">
-            <h2>Carrito de Compras</h2>
+            <button id="cart-back" class="cart-back" style="display:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <h2 id="cart-title">Carrito de Compras</h2>
             <button class="cart-close" id="cart-close">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -95,24 +100,96 @@
                 </svg>
             </button>
         </div>
-        <div class="cart-items" id="cart-items">
-            <!-- Cart items will be dynamically added here -->
-        </div>
-        <div class="cart-footer">
-            <div id="cart-summary" class="cart-summary">
-                <div class="cart-total">
-                    <span>Total:</span>
-                    <span>$0 MXN</span>
+
+        <!-- Vista 1: Carrito -->
+        <div id="cart-main-view">
+            <div class="cart-items" id="cart-items">
+                <!-- Cart items will be dynamically added here -->
+            </div>
+            <div class="cart-footer">
+                <div id="cart-summary" class="cart-summary">
+                    <div class="cart-total">
+                        <span>Total:</span>
+                        <span>$0 MXN</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="promo-code-section" style="margin-bottom: 15px;">
-                <input type="text" id="internal-code" placeholder="Código Interno (Opcional)"
-                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px;">
-                <small style="color: #666; font-size: 0.8em;">Solo para personal autorizado</small>
-            </div>
+                <div class="promo-code-section" style="margin-bottom: 15px;">
+                    <input type="text" id="internal-code" placeholder="Código Interno (Opcional)"
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px;">
+                    <small style="color: #666; font-size: 0.8em;">Solo para personal autorizado</small>
+                </div>
 
-            <button class="checkout-btn" id="checkout-btn">Proceder al Pago</button>
+                <button class="checkout-btn" id="checkout-btn">Proceder al Pago</button>
+            </div>
+        </div>
+
+        <!-- Vista 2: Envío -->
+        <div id="cart-shipping-view" style="display:none;">
+            <div class="shipping-form-container">
+                <p style="color: #666; margin-bottom: 16px;">Ingresa los datos de tu destino para cotizar el envío.</p>
+
+                <div class="shipping-form">
+                    <div class="shipping-field">
+                        <input type="text" id="shipping-postal-code" placeholder="Código Postal (5 dígitos)" maxlength="5" inputmode="numeric" pattern="[0-9]*">
+                    </div>
+                    <div class="shipping-field">
+                        <select id="shipping-state">
+                            <option value="">Estado</option>
+                            <option value="Aguascalientes">Aguascalientes</option>
+                            <option value="Baja California">Baja California</option>
+                            <option value="Baja California Sur">Baja California Sur</option>
+                            <option value="Campeche">Campeche</option>
+                            <option value="Chiapas">Chiapas</option>
+                            <option value="Chihuahua">Chihuahua</option>
+                            <option value="Ciudad de Mexico">Ciudad de México</option>
+                            <option value="Coahuila">Coahuila</option>
+                            <option value="Colima">Colima</option>
+                            <option value="Durango">Durango</option>
+                            <option value="Guanajuato">Guanajuato</option>
+                            <option value="Guerrero">Guerrero</option>
+                            <option value="Hidalgo">Hidalgo</option>
+                            <option value="Jalisco">Jalisco</option>
+                            <option value="Mexico">Estado de México</option>
+                            <option value="Michoacan">Michoacán</option>
+                            <option value="Morelos">Morelos</option>
+                            <option value="Nayarit">Nayarit</option>
+                            <option value="Nuevo Leon">Nuevo León</option>
+                            <option value="Oaxaca">Oaxaca</option>
+                            <option value="Puebla">Puebla</option>
+                            <option value="Queretaro">Querétaro</option>
+                            <option value="Quintana Roo">Quintana Roo</option>
+                            <option value="San Luis Potosi">San Luis Potosí</option>
+                            <option value="Sinaloa">Sinaloa</option>
+                            <option value="Sonora">Sonora</option>
+                            <option value="Tabasco">Tabasco</option>
+                            <option value="Tamaulipas">Tamaulipas</option>
+                            <option value="Tlaxcala">Tlaxcala</option>
+                            <option value="Veracruz">Veracruz</option>
+                            <option value="Yucatan">Yucatán</option>
+                            <option value="Zacatecas">Zacatecas</option>
+                        </select>
+                    </div>
+                    <div class="shipping-row">
+                        <div class="shipping-field">
+                            <input type="text" id="shipping-city" placeholder="Ciudad / Municipio">
+                        </div>
+                        <div class="shipping-field">
+                            <input type="text" id="shipping-neighborhood" placeholder="Colonia">
+                        </div>
+                    </div>
+                    <button id="shipping-search-btn" class="shipping-search-btn">Buscar Tarifas</button>
+                </div>
+
+                <div id="shipping-error" class="shipping-error" style="display:none;"></div>
+                <div id="shipping-loading" class="shipping-loading" style="display:none;">
+                    <div class="shipping-spinner"></div>
+                    <p>Consultando tarifas de envío...</p>
+                </div>
+                <div id="shipping-rates" class="shipping-rates"></div>
+
+                <button id="shipping-continue-btn" class="shipping-continue-btn" style="display:none;">Continuar al Pago</button>
+            </div>
         </div>
     </div>
 

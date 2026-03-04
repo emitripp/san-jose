@@ -14,6 +14,8 @@ const path = require('path');
 const { supabaseAdmin } = require('./lib/supabase');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
+const skydropx = require('./lib/skydropx');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -217,10 +219,69 @@ app.get('/config', (req, res) => {
     res.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
 });
 
+// Endpoint para cotizar envío con Skydropx
+app.post('/api/shipping/rates', async (req, res) => {
+    try {
+        const { postalCode, state, city, neighborhood, items } = req.body;
+        if (!postalCode || !items?.length) {
+            return res.status(400).json({ error: 'postalCode e items son requeridos' });
+        }
+        if (!/^\d{5}$/.test(postalCode)) {
+            return res.status(400).json({ error: 'Código postal debe ser 5 dígitos' });
+        }
+
+        // Use fallback fixed rates if Skydropx is not configured
+        if (!skydropx.isConfigured()) {
+            const hasHeavy = items.some(i => (i.name || '').match(/maleta|mochila/i));
+            return res.json({
+                quoteToken: 'fallback',
+                rates: [
+                    { id: 'standard', carrier: 'Envío Estándar', service: hasHeavy ? 'Voluminoso' : 'Nacional', price: hasHeavy ? 250 : 150, currency: 'MXN', days: 7 },
+                    { id: 'express', carrier: 'Envío Express', service: hasHeavy ? 'Voluminoso' : 'Nacional', price: hasHeavy ? 350 : 250, currency: 'MXN', days: 3 }
+                ],
+                fallback: true
+            });
+        }
+
+        const destination = {
+            area_level1: state || '',
+            area_level2: city || '',
+            area_level3: neighborhood || ''
+        };
+
+        const packages = skydropx.selectBox(items);
+        const { quotationId, rates } = await skydropx.getRates(postalCode, destination, packages);
+
+        if (!rates.length) {
+            return res.status(404).json({ error: 'No se encontraron tarifas para ese código postal' });
+        }
+
+        // Cache quote server-side
+        const cartHash = crypto.createHash('md5').update(JSON.stringify(items.map(i => ({ n: i.name, q: i.quantity })))).digest('hex');
+        const quoteToken = crypto.randomUUID();
+
+        if (supabaseAdmin) {
+            await supabaseAdmin.from('shipping_quotes').insert({
+                quote_token: quoteToken,
+                postal_code: postalCode,
+                packages: packages,
+                rates: rates,
+                cart_hash: cartHash,
+                expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+            });
+        }
+
+        res.json({ quoteToken, rates, quotationId });
+    } catch (error) {
+        console.error('Error fetching shipping rates:', error);
+        res.status(500).json({ error: 'Error al cotizar envío: ' + error.message });
+    }
+});
+
 // Endpoint para crear sesión de checkout de Stripe
 app.post('/create-checkout-session', async (req, res) => {
     try {
-        const { items, pickupCode } = req.body;
+        const { items, pickupCode, quoteToken, selectedRateId } = req.body;
 
         // Validar stock antes de crear sesión
         if (supabaseAdmin) {
@@ -281,60 +342,86 @@ app.post('/create-checkout-session', async (req, res) => {
             });
         }
 
-        // Detectar si hay artículos pesados (Maleta o Mochila)
-        const hasHeavyItems = items.some(item =>
-            item.name.includes('Maleta') || item.name.includes('Mochila')
-        );
+        // Build shipping options
+        let shippingOptions;
+        let quote = null;
 
-        // Definir opciones de envío base
-        let shippingOptions = [
-            {
+        if (isInternalOrder) {
+            // GOCA: free pickup
+            shippingOptions = [{
                 shipping_rate_data: {
                     type: 'fixed_amount',
-                    fixed_amount: {
-                        amount: hasHeavyItems ? 25000 : 15000, // $250 si es pesado, $150 normal
-                        currency: 'mxn',
-                    },
-                    display_name: hasHeavyItems ? 'Envío Estándar (Voluminoso)' : 'Envío Estándar',
-                    delivery_estimate: {
-                        minimum: { unit: 'business_day', value: 5 },
-                        maximum: { unit: 'business_day', value: 7 },
-                    },
-                },
-            },
-            {
-                shipping_rate_data: {
-                    type: 'fixed_amount',
-                    fixed_amount: {
-                        amount: hasHeavyItems ? 35000 : 25000, // $350 si es pesado, $250 normal
-                        currency: 'mxn',
-                    },
-                    display_name: hasHeavyItems ? 'Envío Express (Voluminoso)' : 'Envío Express',
+                    fixed_amount: { amount: 0, currency: 'mxn' },
+                    display_name: 'Recoger en Oficina (Interno)',
                     delivery_estimate: {
                         minimum: { unit: 'business_day', value: 1 },
-                        maximum: { unit: 'business_day', value: 3 },
+                        maximum: { unit: 'business_day', value: 2 },
                     },
                 },
-            },
-        ];
+            }];
+        } else if (quoteToken && selectedRateId && quoteToken !== 'fallback') {
+            // Dynamic rate from Skydropx quote
+            const { data: quoteData } = await supabaseAdmin
+                .from('shipping_quotes')
+                .select('*')
+                .eq('quote_token', quoteToken)
+                .gt('expires_at', new Date().toISOString())
+                .single();
 
-        // Si es pedido interno, reemplazar opciones de envío con "Recoger en Oficina"
-        if (isInternalOrder) {
+            if (!quoteData) {
+                return res.status(400).json({ error: 'Cotización expirada. Por favor cotiza de nuevo.' });
+            }
+
+            // Validate cart hash
+            const cartHash = crypto.createHash('md5').update(JSON.stringify(items.map(i => ({ n: i.name, q: i.quantity })))).digest('hex');
+            if (quoteData.cart_hash !== cartHash) {
+                return res.status(400).json({ error: 'El carrito cambió. Por favor cotiza de nuevo.' });
+            }
+
+            const selectedRate = quoteData.rates.find(r => r.id === selectedRateId);
+            if (!selectedRate) {
+                return res.status(400).json({ error: 'Tarifa seleccionada no encontrada.' });
+            }
+
+            quote = quoteData;
+            const days = selectedRate.days || 7;
+            shippingOptions = [{
+                shipping_rate_data: {
+                    type: 'fixed_amount',
+                    fixed_amount: { amount: Math.round(selectedRate.price * 100), currency: 'mxn' },
+                    display_name: `${selectedRate.carrier} - ${selectedRate.service}`,
+                    delivery_estimate: {
+                        minimum: { unit: 'business_day', value: Math.max(1, days - 1) },
+                        maximum: { unit: 'business_day', value: days + 1 },
+                    },
+                },
+            }];
+        } else {
+            // Fallback fixed rates
+            const hasHeavyItems = items.some(item => item.name.includes('Maleta') || item.name.includes('Mochila'));
             shippingOptions = [
                 {
                     shipping_rate_data: {
                         type: 'fixed_amount',
-                        fixed_amount: {
-                            amount: 0,
-                            currency: 'mxn',
-                        },
-                        display_name: 'Recoger en Oficina (Interno)',
+                        fixed_amount: { amount: hasHeavyItems ? 25000 : 15000, currency: 'mxn' },
+                        display_name: hasHeavyItems ? 'Envío Estándar (Voluminoso)' : 'Envío Estándar',
                         delivery_estimate: {
-                            minimum: { unit: 'business_day', value: 1 },
-                            maximum: { unit: 'business_day', value: 2 },
+                            minimum: { unit: 'business_day', value: 5 },
+                            maximum: { unit: 'business_day', value: 7 },
                         },
                     },
-                }
+                },
+                {
+                    shipping_rate_data: {
+                        type: 'fixed_amount',
+                        fixed_amount: { amount: hasHeavyItems ? 35000 : 25000, currency: 'mxn' },
+                        display_name: hasHeavyItems ? 'Envío Express (Voluminoso)' : 'Envío Express',
+                        delivery_estimate: {
+                            minimum: { unit: 'business_day', value: 1 },
+                            maximum: { unit: 'business_day', value: 3 },
+                        },
+                    },
+                },
             ];
         }
 
@@ -381,7 +468,13 @@ app.post('/create-checkout-session', async (req, res) => {
             ],
             shipping_options: shippingOptions,
             metadata: {
-                items: JSON.stringify(items)
+                items: JSON.stringify(items),
+                ...(quote && {
+                    shippingCarrier: quote.rates.find(r => r.id === selectedRateId)?.carrier || '',
+                    shippingService: quote.rates.find(r => r.id === selectedRateId)?.service || '',
+                    destinationPostalCode: quote.postal_code || '',
+                    shippingPackages: JSON.stringify(quote.packages || [])
+                })
             }
         });
 
@@ -537,6 +630,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             let savedOrderNumber = null;
             try {
                 if (supabaseAdmin) {
+                    const shippingMeta = session.metadata || {};
                     const { data, error: dbError } = await supabaseAdmin
                         .from('orders')
                         .insert({
@@ -546,7 +640,11 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                             subtotal: subtotalCents,
                             shipping: shippingCents,
                             total: totalCents,
-                            status: 'pagado'
+                            status: 'pagado',
+                            shipping_carrier: shippingMeta.shippingCarrier || null,
+                            shipping_service: shippingMeta.shippingService || null,
+                            destination_postal_code: shippingMeta.destinationPostalCode || null,
+                            shipping_packages: shippingMeta.shippingPackages ? JSON.parse(shippingMeta.shippingPackages) : null
                         })
                         .select('id, order_number')
                         .single();
