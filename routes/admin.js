@@ -19,7 +19,7 @@ const upload = multer({
 // ============================================
 // MIDDLEWARE: Verify Admin JWT Token
 // ============================================
-const verifyAdmin = (req, res, next) => {
+const verifyAdmin = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -30,6 +30,14 @@ const verifyAdmin = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const { data: admin } = await supabaseAdmin
+            .from('admins')
+            .select('id')
+            .eq('id', decoded.id)
+            .single();
+        if (!admin) {
+            return res.status(403).json({ error: 'Admin no encontrado' });
+        }
         req.admin = decoded;
         next();
     } catch (error) {
@@ -748,7 +756,7 @@ router.post('/discount-codes', verifyAdmin, async (req, res) => {
 
     } catch (error) {
         console.error('Create discount code error:', error);
-        res.status(500).json({ error: error.message || 'Failed to create discount code' });
+        res.status(500).json({ error: 'Error al crear código de descuento' });
     }
 });
 
@@ -760,7 +768,7 @@ router.patch('/discount-codes/:id', verifyAdmin, async (req, res) => {
         res.json(promotionCode);
     } catch (error) {
         console.error('Update discount code error:', error);
-        res.status(500).json({ error: error.message || 'Failed to update discount code' });
+        res.status(500).json({ error: 'Error al actualizar código de descuento' });
     }
 });
 
@@ -793,7 +801,7 @@ router.delete('/discount-codes/:id', verifyAdmin, async (req, res) => {
         res.json({ success: true });
     } catch (error) {
         console.error('Delete discount code error:', error);
-        res.status(500).json({ error: error.message || 'Failed to delete discount code' });
+        res.status(500).json({ error: 'Error al eliminar código de descuento' });
     }
 });
 
@@ -837,9 +845,10 @@ router.post('/pages', verifyAdmin, async (req, res) => {
             .from('pages')
             .select('display_order')
             .order('display_order', { ascending: false })
-            .limit(1);
+            .limit(1)
+            .single();
 
-        const display_order = (maxOrder && maxOrder.length > 0) ? maxOrder[0].display_order + 1 : 1;
+        const display_order = (maxOrder?.display_order || 0) + 1;
 
         const { data, error } = await supabaseAdmin
             .from('pages')

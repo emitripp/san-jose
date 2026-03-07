@@ -1053,6 +1053,7 @@ async function loadGallery() {
 
     } catch (error) {
         console.error('Load gallery error:', error);
+        showToast('Error al cargar galería', 'error');
     }
 }
 
@@ -1291,6 +1292,7 @@ async function loadContent() {
 
     } catch (error) {
         console.error('Load content error:', error);
+        showToast('Error al cargar contenido', 'error');
     }
 }
 
@@ -1449,6 +1451,7 @@ async function loadCategories() {
 
     } catch (error) {
         console.error('Load categories error:', error);
+        showToast('Error al cargar categorías', 'error');
     }
 }
 
@@ -1639,6 +1642,7 @@ async function loadSettings() {
         }
     } catch (error) {
         console.error('Load settings error:', error);
+        showToast('Error al cargar configuración', 'error');
     }
 }
 
@@ -1768,7 +1772,7 @@ function renderOrders() {
                     </span>
                     <span class="order-total">$${totalDisplay.toLocaleString('es-MX')} MXN</span>
                     <span>
-                        <select class="order-status-select" data-order-id="${order.id}" style="border: 2px solid ${statusColors[status] || '#ccc'}; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; color: ${statusColors[status] || '#333'};">
+                        <select class="order-status-select" data-order-id="${order.id}" data-current-status="${status}" style="border: 2px solid ${statusColors[status] || '#ccc'}; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; color: ${statusColors[status] || '#333'};">
                             ${['pagado', 'procesado', 'enviado', 'entregado'].map(s =>
                                 `<option value="${s}" ${status === s ? 'selected' : ''}>${statusLabels[s]}</option>`
                             ).join('')}
@@ -1786,7 +1790,19 @@ function renderOrders() {
     // Add event listeners for status changes
     list.querySelectorAll('.order-status-select').forEach(select => {
         select.addEventListener('change', (e) => {
-            updateOrderStatus(e.target.dataset.orderId, e.target.value);
+            const orderId = e.target.dataset.orderId;
+            const newStatus = e.target.value;
+            const previousValue = e.target.dataset.currentStatus;
+            showConfirmModal(
+                'Cambiar Estado',
+                `¿Cambiar estado del pedido a "${newStatus.toUpperCase()}"?`,
+                'Cambiar',
+                async () => {
+                    await updateOrderStatus(orderId, newStatus);
+                }
+            );
+            // Revertir visualmente hasta que se confirme
+            e.target.value = previousValue;
         });
     });
 }
@@ -1900,6 +1916,7 @@ async function loadDiscountCodes() {
 
     } catch (error) {
         console.error('Load discount codes error:', error);
+        showToast('Error al cargar códigos de descuento', 'error');
     }
 }
 
@@ -2059,6 +2076,7 @@ async function loadPages() {
 
     } catch (error) {
         console.error('Load pages error:', error);
+        showToast('Error al cargar páginas', 'error');
     }
 }
 
@@ -2209,6 +2227,7 @@ async function loadSubscribers() {
 
     } catch (error) {
         console.error('Load subscribers error:', error);
+        showToast('Error al cargar suscriptores', 'error');
     }
 }
 
@@ -2469,6 +2488,7 @@ window.confirmDeleteSubscriber = confirmDeleteSubscriber;
 window.openGenerateLabelModal = openGenerateLabelModal;
 window.generateShippingLabel = generateShippingLabel;
 window.cancelOrderShipment = cancelOrderShipment;
+window.deleteDiscountCode = deleteDiscountCode;
 
 // ============================================
 // SHIPPING LABEL GENERATION
@@ -2545,21 +2565,21 @@ async function generateShippingLabel(orderId, rateId) {
     }
 }
 
-async function cancelOrderShipment(orderId) {
-    if (!confirm('¿Cancelar la guía de envío?')) return;
+function cancelOrderShipment(orderId) {
+    showConfirmModal('Cancelar Envío', '¿Cancelar la guía de envío?', 'Cancelar', async () => {
+        try {
+            const res = await fetch(`${API_BASE}/orders/${orderId}/cancel-shipment`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
 
-    try {
-        const res = await fetch(`${API_BASE}/orders/${orderId}/cancel-shipment`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-
-        showToast('Guía cancelada');
-        document.getElementById('confirm-modal').classList.remove('active');
-        loadOrders();
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
+            showToast('Guía cancelada', 'success');
+            document.getElementById('confirm-modal').classList.remove('active');
+            loadOrders();
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        }
+    });
 }
