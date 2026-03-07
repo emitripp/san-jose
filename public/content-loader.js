@@ -127,8 +127,16 @@
         }
     }
 
+    // Update copyright year dynamically
+    function updateCopyrightYear() {
+        const yearSpans = document.querySelectorAll('.copyright-year');
+        const currentYear = new Date().getFullYear();
+        yearSpans.forEach(span => { span.textContent = currentYear; });
+    }
+
     // Load content when DOM is ready
     function init() {
+        updateCopyrightYear();
         loadContent();
         loadFooterPages();
         loadGallery();

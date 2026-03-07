@@ -6,6 +6,9 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { supabaseAdmin } = require('../lib/supabase');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { sendStatusUpdate } = require('../lib/email');
+const skydropx = require('../lib/skydropx');
+const { Resend } = require('resend');
 
 // Configure multer for memory storage (for image uploads)
 const upload = multer({
@@ -954,7 +957,6 @@ router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
 
         // Send email notification to customer about status update
         try {
-            const { sendStatusUpdate } = require('../lib/email');
             await sendStatusUpdate(data, status);
         } catch (emailError) {
             console.error('Error sending status update email:', emailError);
@@ -971,7 +973,6 @@ router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
 // POST /api/admin/orders/:id/shipping-rates - Get shipping rates for an order
 router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
     try {
-        const skydropx = require('../lib/skydropx');
         if (!skydropx.isConfigured()) {
             return res.status(400).json({ error: 'Skydropx no está configurado' });
         }
@@ -995,7 +996,13 @@ router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
 
         const packages = order.shipping_packages || skydropx.selectBox(order.items || []);
         const { quotationId, rates } = await skydropx.getRates(postalCode, destination, packages);
-        res.json({ quotationId, rates, packages });
+        res.json({
+            quotationId, rates, packages,
+            customerChoice: {
+                carrier: order.shipping_carrier || null,
+                service: order.shipping_service || null
+            }
+        });
     } catch (error) {
         console.error('Shipping rates error:', error);
         res.status(500).json({ error: 'Error al cotizar: ' + error.message });
@@ -1005,7 +1012,6 @@ router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
 // POST /api/admin/orders/:id/generate-label - Generate shipping label
 router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
     try {
-        const skydropx = require('../lib/skydropx');
         const { rateId } = req.body;
         if (!rateId) return res.status(400).json({ error: 'rateId es requerido' });
 
@@ -1043,7 +1049,6 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
 
         // Send email to customer
         try {
-            const { sendStatusUpdate } = require('../lib/email');
             await sendStatusUpdate({ ...order, ...updateData }, 'enviado');
         } catch (emailError) {
             console.error('Error sending shipping email:', emailError);
@@ -1059,7 +1064,6 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
 // POST /api/admin/orders/:id/cancel-shipment - Cancel shipment
 router.post('/orders/:id/cancel-shipment', verifyAdmin, async (req, res) => {
     try {
-        const skydropx = require('../lib/skydropx');
         const { data: order, error } = await supabaseAdmin
             .from('orders')
             .select('shipment_id')
@@ -1146,7 +1150,6 @@ router.post('/subscribers/send-email', verifyAdmin, async (req, res) => {
             return res.status(400).json({ error: 'No hay suscriptores activos' });
         }
 
-        const { Resend } = require('resend');
         const resend = new Resend(process.env.RESEND_API_KEY);
         const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Legado San José <onboarding@resend.dev>';
         const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || 'legadosanjosemx@gmail.com';

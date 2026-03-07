@@ -15,6 +15,7 @@ const { supabaseAdmin } = require('./lib/supabase');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 const skydropx = require('./lib/skydropx');
+const { sendOrderConfirmation, sendOrderNotification } = require('./lib/email');
 const crypto = require('crypto');
 
 const app = express();
@@ -83,7 +84,7 @@ app.use(async (req, res, next) => {
         // If it's a page request (no extension or .html), show maintenance
         const isPageRequest = !req.path.includes('.') || req.path.endsWith('.html');
         if (isPageRequest) {
-            return res.sendFile(path.join(__dirname, 'maintenance.html'));
+            return res.sendFile(path.join(__dirname, 'public', 'maintenance.html'));
         }
     }
     next();
@@ -102,8 +103,8 @@ app.use((req, res, next) => {
 });
 
 // Main Static delivery
-app.use(express.static('.'));
-app.use('/admin', express.static('admin'));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d' }));
+app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { maxAge: '7d' }));
 
 // API Routes
 app.use('/api/admin', adminRoutes);
@@ -143,7 +144,7 @@ app.post('/api/try-on', upload.single('image'), async (req, res) => {
             // Local file path
             // Remove leading slash if present to avoid absolute path confusion
             const cleanPath = productImageUrl.startsWith('/') ? productImageUrl.slice(1) : productImageUrl;
-            const localPath = path.join(__dirname, cleanPath);
+            const localPath = path.join(__dirname, 'public', cleanPath);
 
             if (fs.existsSync(localPath)) {
                 productImageBuffer = fs.readFileSync(localPath);
@@ -288,11 +289,14 @@ app.post('/create-checkout-session', async (req, res) => {
         // Validar stock antes de crear sesión
         if (supabaseAdmin) {
             for (const item of items) {
-                const { data: product } = await supabaseAdmin
-                    .from('products')
-                    .select('id, stock, name, variants')
-                    .eq('name', item.name)
-                    .single();
+                // Buscar por ID si está disponible, fallback a nombre (backwards compat)
+                const query = supabaseAdmin.from('products').select('id, stock, name, variants');
+                if (item.id) {
+                    query.eq('id', item.id);
+                } else {
+                    query.eq('name', item.name);
+                }
+                const { data: product } = await query.single();
 
                 if (!product) continue;
 
@@ -667,11 +671,14 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             try {
                 if (supabaseAdmin) {
                     for (const item of items) {
-                        const { data: product } = await supabaseAdmin
-                            .from('products')
-                            .select('id, stock, variants')
-                            .eq('name', item.name)
-                            .single();
+                        // Buscar por ID si está disponible, fallback a nombre (backwards compat)
+                        const query = supabaseAdmin.from('products').select('id, stock, variants');
+                        if (item.id) {
+                            query.eq('id', item.id);
+                        } else {
+                            query.eq('name', item.name);
+                        }
+                        const { data: product } = await query.single();
 
                         if (!product) continue;
 
@@ -691,13 +698,16 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                                 console.log(`Stock variante actualizado: ${item.name} - ${item.variant} - ${item.size}`);
                             }
                         } else if (product.stock !== null && product.stock !== undefined) {
-                            // Decremento stock general
-                            const newStock = Math.max(0, product.stock - (item.quantity || 1));
-                            await supabaseAdmin
-                                .from('products')
-                                .update({ stock: newStock })
-                                .eq('id', product.id);
-                            console.log(`Stock actualizado: ${item.name} -> ${newStock}`);
+                            // Decremento atómico stock general via función SQL
+                            const { error: rpcError } = await supabaseAdmin.rpc('decrement_product_stock', {
+                                p_product_id: product.id,
+                                p_quantity: item.quantity || 1
+                            });
+                            if (rpcError) {
+                                console.error(`Error decrementando stock general: ${item.name}`, rpcError);
+                            } else {
+                                console.log(`Stock actualizado: ${item.name}`);
+                            }
                         }
                     }
                 }
@@ -707,7 +717,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
             // 3. Enviar emails de confirmación
             try {
-                const { sendOrderConfirmation, sendOrderNotification } = require('./lib/email');
                 const emailOrderNumber = savedOrderNumber
                     ? `LSJ-${String(savedOrderNumber).padStart(5, '0')}`
                     : savedOrderId || `ORD-${Date.now()}`;

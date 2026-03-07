@@ -215,7 +215,7 @@ function renderProducts(filter = 'all') {
         return;
     }
 
-    grid.innerHTML = filteredProducts.map(product => {
+    grid.innerHTML = filteredProducts.map((product, index) => {
         const isOutOfStock = isProductOutOfStock(product);
         const totalStock = getProductTotalStock(product);
         const isLowStock = totalStock !== null && totalStock > 0 && totalStock <= 3;
@@ -231,7 +231,7 @@ function renderProducts(filter = 'all') {
             ${stockBadge}
             <div class="product-image" onclick="${isOutOfStock ? '' : `openProductModal('${product.id}')`}" style="cursor: ${isOutOfStock ? 'default' : 'pointer'};">
                 ${product.image
-            ? `<img src="${product.image}" alt="${product.name}" style="width: 100%; height: 100%; object-fit: cover; ${isOutOfStock ? 'opacity: 0.5;' : ''}">`
+            ? `<img src="${product.image}" alt="${product.name}" loading="${index < 4 ? 'eager' : 'lazy'}" onload="this.parentElement.style.animation='none';this.parentElement.style.background='#fff'" style="width: 100%; height: 100%; object-fit: cover; ${isOutOfStock ? 'opacity: 0.5;' : ''}">`
             : `<div class="placeholder-product" style="background: ${product.gradient};"><span>${product.name}</span></div>`
         }
             </div>
@@ -946,7 +946,9 @@ async function createStripeCheckoutSession() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                // NOTE: item.id adds ~36 chars per item to Stripe metadata (500 char limit)
                 items: cart.map(item => ({
+                    id: item.id,
                     name: item.name,
                     price: item.price,
                     quantity: item.quantity,
@@ -1158,32 +1160,42 @@ async function generateTryOn() {
     }
 }
 
-// Preload Images for Instant UX
+// Preload main product images (deferred to not compete with initial render)
 function preloadImages() {
-    console.log('Preloading images...');
-    const allImages = new Set();
+    const preload = () => {
+        const mainImages = new Set();
+        productsData.forEach(product => {
+            if (product.image) mainImages.add(product.image);
+        });
+        mainImages.forEach(url => {
+            const img = new Image();
+            img.src = url;
+        });
+        console.log(`Preloaded ${mainImages.size} main images.`);
+    };
 
-    productsData.forEach(product => {
-        // Main product images
-        if (product.image) allImages.add(product.image);
-        if (product.images) product.images.forEach(img => allImages.add(img));
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(preload);
+    } else {
+        setTimeout(preload, 2000);
+    }
+}
 
-        // Variant images
-        if (product.variants) {
-            product.variants.forEach(variant => {
-                if (variant.image) allImages.add(variant.image);
-                if (variant.images) variant.images.forEach(img => allImages.add(img));
-            });
+// Scroll to Top Button
+(function () {
+    const scrollBtn = document.getElementById('scroll-to-top');
+    if (!scrollBtn) return;
+
+    window.addEventListener('scroll', function () {
+        if (window.scrollY > 400) {
+            scrollBtn.classList.add('visible');
+        } else {
+            scrollBtn.classList.remove('visible');
         }
     });
 
-    allImages.forEach(url => {
-        const img = new Image();
-        img.src = url;
+    scrollBtn.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
-    console.log(`Preloaded ${allImages.size} images.`);
-}
-
-// Start preloading when page loads
-// Start preloading when page loads
+})();
 

@@ -15,6 +15,7 @@
         gtag('config', 'G-JT5P73Z3EV');
     </script>
 
+    <link rel="preconnect" href="https://eeylocshlsspbbkmmhov.supabase.co" crossorigin>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="productos.css">
 </head>
@@ -39,7 +40,7 @@
                 <li><a href="index.html">Inicio</a></li>
                 <li><a href="productos.html" class="active">Productos</a></li>
                 <li><a href="index.html#nosotros">Nosotros</a></li>
-                <li><a href="index.html#contacto">Contacto</a></li>
+                <li><a href="#contacto">Contacto</a></li>
             </ul>
 
             <div class="nav-cart" id="cart-toggle">
@@ -114,6 +115,9 @@
                     </div>
                 </div>
 
+                <p style="color: #888; font-size: 0.85em; margin-bottom: 12px; text-align: center;">
+                    Si tienes un código de descuento, puedes redimirlo en la siguiente pantalla (ventana de pago)
+                </p>
                 <div class="promo-code-section" style="margin-bottom: 15px;">
                     <input type="text" id="internal-code" placeholder="Código Interno (Opcional)"
                         style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 5px;">
@@ -305,6 +309,24 @@
         </div>
     </div>
 
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-content reveal">
+                <h2>Únete a la Familia</h2>
+                <p>Suscríbete para recibir noticias y promociones exclusivas</p>
+                <form class="newsletter-form">
+                    <input type="email" placeholder="Tu correo electrónico" required>
+                    <button type="submit">Suscribirse</button>
+                </form>
+                <p style="margin-top: 20px; font-size: 0.9em; color: rgba(255,255,255,0.7);">
+                    Para dudas o aclaraciones sobre tu pedido, escríbenos a:
+                    <a href="mailto:legadosanjosemx@gmail.com" style="color: #F5A84F; text-decoration: none;">legadosanjosemx@gmail.com</a>
+                </p>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer" id="contacto">
         <div class="container">
@@ -334,10 +356,17 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 Legado San José. Todos los derechos reservados.</p>
+                <p>&copy; <span class="copyright-year">2025</span> Legado San José. Todos los derechos reservados.</p>
             </div>
         </div>
     </footer>
+
+    <!-- Scroll to Top Button -->
+    <button class="scroll-to-top" id="scroll-to-top" aria-label="Volver arriba">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
 
     <!-- Stripe.js -->
     <script src="https://js.stripe.com/v3/"></script>

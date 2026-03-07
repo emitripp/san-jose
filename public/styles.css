@@ -4,6 +4,7 @@
     src: url('Fonts/Rawgly.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
@@ -11,6 +12,7 @@
     src: url('Fonts/Montserrat-Light.otf') format('opentype');
     font-weight: 300;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
@@ -18,6 +20,7 @@
     src: url('Fonts/Montserrat-Regular.otf') format('opentype');
     font-weight: 400;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
@@ -25,6 +28,7 @@
     src: url('Fonts/Montserrat-SemiBold.otf') format('opentype');
     font-weight: 600;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
@@ -32,6 +36,7 @@
     src: url('Fonts/Montserrat-Bold.otf') format('opentype');
     font-weight: 700;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
@@ -39,6 +44,7 @@
     src: url('Fonts/Montserrat-Black.otf') format('opentype');
     font-weight: 900;
     font-style: normal;
+    font-display: swap;
 }
 
 /* Color Palette */
@@ -171,6 +177,10 @@ a {
     text-shadow: none;
 }
 
+.navbar.scrolled .nav-menu a.active {
+    color: var(--primary);
+}
+
 .nav-menu a::after {
     content: '';
     position: absolute;
@@ -182,8 +192,13 @@ a {
     transition: width 0.3s ease;
 }
 
-.nav-menu a:hover::after {
+.nav-menu a:hover::after,
+.nav-menu a.active::after {
     width: 100%;
+}
+
+.nav-menu a.active {
+    color: var(--primary);
 }
 
 .nav-cart {
@@ -668,6 +683,14 @@ a {
     position: relative;
     overflow: hidden;
     aspect-ratio: 1;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 .placeholder-product {
@@ -761,9 +784,10 @@ a {
 
 .about-content p {
     font-size: 18px;
-    color: var(--gray-mid);
+    color: #555;
     margin-bottom: 20px;
     line-height: 1.8;
+    font-weight: 400;
 }
 
 .about-features {
@@ -775,7 +799,7 @@ a {
     font-size: 18px;
     color: var(--brown);
     margin-bottom: 15px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .about-image {
@@ -1157,6 +1181,16 @@ a {
 
     .newsletter-form button {
         width: 100%;
+    }
+
+    /* Gallery: 2 columns on mobile */
+    .gallery-collage {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .gallery-large,
+    .gallery-wide {
+        grid-column: span 2;
     }
 
     /* Reduce spacing on mobile */

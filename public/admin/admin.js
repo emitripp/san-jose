@@ -2488,22 +2488,33 @@ async function openGenerateLabelModal(orderId) {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
 
-        const ratesHtml = data.rates.map(rate => `
-            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+        const choice = data.customerChoice;
+        const ratesHtml = data.rates.map(rate => {
+            const isChoice = choice && choice.carrier === rate.carrier && choice.service === rate.service;
+            const borderColor = isChoice ? '#7c3aed' : '#ddd';
+            const bgColor = isChoice ? '#f5f0ff' : 'transparent';
+            return `
+            <div style="border: 2px solid ${borderColor}; background: ${bgColor}; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong>${rate.carrier}</strong> - ${rate.service}
-                    ${rate.days ? `<br><small style="color: #888;">${rate.days} días hábiles</small>` : ''}
+                    ${isChoice ? '<br><small style="color: #7c3aed; font-weight: 600;">Elegida por el cliente</small>' : ''}
+                    ${rate.days ? `<br><small style="color: #888;">${rate.days} dias habiles</small>` : ''}
                 </div>
                 <div style="text-align: right;">
                     <div style="font-weight: 700;">$${rate.price.toLocaleString('es-MX')} MXN</div>
-                    <button onclick="generateShippingLabel('${orderId}', '${rate.id}')" style="background: #7c3aed; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; margin-top: 4px; font-size: 0.85rem;">Generar</button>
+                    <button onclick="generateShippingLabel('${orderId}', '${rate.id}')" style="background: ${isChoice ? '#7c3aed' : '#555'}; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; margin-top: 4px; font-size: 0.85rem;">${isChoice ? 'Generar' : 'Generar'}</button>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
+
+        const choiceNote = choice && choice.carrier
+            ? `<p style="margin-bottom: 12px; color: #7c3aed; font-weight: 500;">El cliente eligio: ${choice.carrier} - ${choice.service}</p>`
+            : '';
 
         document.getElementById('confirm-message').innerHTML = `
             <div style="max-width: 450px;">
-                <p style="margin-bottom: 12px;">Selecciona la paquetería para generar la guía:</p>
+                <p style="margin-bottom: 8px;">Selecciona la paqueteria para generar la guia:</p>
+                ${choiceNote}
                 ${ratesHtml}
             </div>
         `;

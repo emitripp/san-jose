@@ -1,171 +1,131 @@
-# Legado San José - E-commerce Merchandise Store
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-Tienda online de mercancía para **Legado San José**, una marca de productos inspirados en el rancho. El sitio está completamente en **español**. Vende gorras, playeras, mochilas y maletas de viaje con integración de pagos via Stripe en MXN (pesos mexicanos).
-
-**Repo:** https://github.com/emitripp/san-jose.git
-
-## Tech Stack
+Tienda online de mercancia para **Legado San Jose**, una marca de productos inspirados en el rancho. El sitio esta completamente en **espanol**. Vende gorras, playeras, mochilas y maletas de viaje con integracion de pagos via Stripe en MXN (pesos mexicanos).
 
 - **Frontend:** Vanilla HTML/CSS/JS (sin frameworks)
 - **Backend:** Node.js + Express.js
 - **Database:** Supabase (PostgreSQL) con Row Level Security
 - **Pagos:** Stripe (checkout sessions, webhooks, promotion codes API)
+- **Envios:** Skydropx (cotizaciones, guias, rastreo) con fallback a tarifas fijas
 - **Auth Admin:** JWT (jsonwebtoken) + bcryptjs
-- **Storage:** Supabase Storage (imágenes de productos y galería)
-- **Emails:** Resend (emails transaccionales de confirmación y notificación)
+- **Storage:** Supabase Storage (imagenes de productos y galeria)
+- **Emails:** Resend (confirmacion, notificacion, actualizacion de estado, marketing)
 - **AI:** Google Generative AI (Gemini) para virtual try-on
-- **Analytics:** Google Analytics 4
 
-## Project Structure
+## Commands
 
-```
-├── server.js                  # Express server principal (entry point)
-├── routes/
-│   ├── admin.js               # API routes admin (CRUD productos, categorías, órdenes, descuentos, páginas)
-│   └── public.js              # API routes públicas (productos, galería, contenido, páginas)
-├── lib/
-│   ├── supabase.js            # Cliente Supabase
-│   └── email.js               # Módulo de emails transaccionales (Resend)
-├── admin/
-│   ├── index.html             # Panel de administración
-│   ├── admin.js               # Lógica del admin panel
-│   └── admin.css              # Estilos del admin
-├── index.html                 # Landing page
-├── script.js                  # JS de landing page
-├── styles.css                 # Estilos de landing page
-├── productos.html             # Página de tienda/productos
-├── productos.js               # Lógica de tienda, carrito, checkout
-├── productos.css              # Estilos de productos
-├── pagina.html                # Template para páginas dinámicas (legales, info)
-├── pagina.js                  # Carga dinámica de contenido de página por slug
-├── success.html               # Página de confirmación de orden
-├── maintenance.html           # Página de modo mantenimiento
-├── content-loader.js          # Carga dinámica de contenido y footer desde API
-├── stripe-config.js           # Configuración de Stripe en frontend
-├── supabase/
-│   ├── schema.sql             # Esquema de BD (tablas, RLS, índices)
-│   ├── migration_v2.sql       # Migración V2: stock, pages, button_link
-│   ├── migrate_products.sql   # Datos iniciales de productos
-│   └── storage_setup.sql      # Configuración de buckets de storage
-├── scripts/
-│   ├── create-admin.js        # Script para crear usuario admin
-│   └── migrate-images.js      # Migración de imágenes a Supabase
-└── Fotos/                     # Imágenes de productos y galería
-    ├── optimized/             # Imágenes optimizadas
-    └── playeras/              # Variantes de playeras (11 colores)
+```bash
+npm start        # Inicia server en produccion
+npm run dev      # Inicia con nodemon (desarrollo)
+node scripts/create-admin.js  # Crear usuario admin
 ```
 
-## Database Tables (Supabase)
+No hay tests, linter, ni build step configurados.
 
-| Tabla | Propósito |
+## Architecture
+
+### Request Flow
+
+```
+Cliente (browser) --> Express (server.js)
+  |-- Static files: express.static('public') + express.static('public/admin')
+  |-- /api/*        --> routes/public.js  (usa supabase con anon key, respeta RLS)
+  |-- /api/admin/*  --> routes/admin.js   (usa supabaseAdmin con service role key, bypasea RLS)
+  |-- /webhook      --> Stripe webhook handler (raw body, signature verification)
+  |-- /create-checkout-session, /verify-session, /config --> directamente en server.js
+  |-- /api/shipping/rates --> Skydropx quote (o fallback fijo)
+  |-- /api/try-on   --> Google Gemini AI
+```
+
+### Key Design Patterns
+
+- **Maintenance middleware** intercepta requests publicos (no admin/API/assets) y muestra `maintenance.html`. Estado cacheado 5s en memoria, se lee de `site_content` tabla.
+- **Webhook es la fuente canonica** para crear ordenes. `verify-session` solo lee la orden creada por el webhook (con retry 3x/1s).
+- **Inventario se decrementa en el webhook** post-pago. Tanto variant stock (`decrement_variant_stock`) como stock general (`decrement_product_stock`) usan RPCs atomicos con `FOR UPDATE`.
+- **Dos clientes Supabase:** `supabase` (anon key, RLS) para rutas publicas, `supabaseAdmin` (service role key) para admin y webhook.
+- **Stripe Promotion Codes API** para descuentos. El checkout tiene `allow_promotion_codes: true`.
+- **Skydropx** para cotizaciones de envio con OAuth 2.0 (token cacheado). Si no esta configurado, devuelve tarifas fijas de fallback.
+- **Cotizaciones se cachean** en tabla `shipping_quotes` con token unico, hash del carrito y expiracion de 15 min.
+- **Codigo interno GOCA** aplica precios de empleado con envio gratis (hardcoded en `INTERNAL_PRICES` en server.js).
+
+### Database Tables (Supabase)
+
+| Tabla | Proposito |
 |-------|-----------|
-| `products` | Catálogo de productos (nombre, precio, categoría, variantes, tallas, imágenes, **stock**) |
-| `site_content` | Contenido dinámico del sitio (hero, about, footer, settings, **button_link**) |
-| `gallery_images` | Imágenes de la galería del landing |
-| `admins` | Usuarios administradores (email, password_hash) |
-| `orders` | Órdenes de compra (customer, items, total, status, tracking) |
-| `pages` | Páginas dinámicas (legales, info) con título, slug, contenido HTML, is_active |
+| `products` | Catalogo (nombre, precio, categoria, variantes con stock por talla, imagenes) |
+| `categories` | Categorias de productos con slug, display_order, is_active |
+| `orders` | Ordenes de compra con customer, items, status, tracking, shipping info |
+| `site_content` | Contenido dinamico del sitio (section/key pairs) |
+| `gallery_images` | Imagenes de la galeria del landing |
+| `pages` | Paginas dinamicas (legales, info) con slug y contenido HTML |
+| `admins` | Usuarios administradores |
+| `subscribers` | Suscriptores de newsletter (email, is_active) |
+| `shipping_quotes` | Cache temporal de cotizaciones de envio (expiran en 15 min) |
 
-## API Routes
+### Frontend Architecture
 
-### Públicas (`/api/`)
-- `GET /api/products` — Productos activos (incluye stock, con Cache-Control: no-store)
-- `GET /api/gallery` — Imágenes de galería
-- `GET /api/categories` — Categorías activas
-- `GET /api/content` — Contenido del sitio
-- `GET /api/pages` — Páginas activas (para footer dinámico)
-- `GET /api/pages/:slug` — Contenido de una página por slug
-- `POST /api/subscribe` — Suscripción a newsletter
-- `POST /api/try-on` — Virtual try-on con AI
+- Archivos frontend estan en `public/` (HTML, CSS, JS, Fonts, Fotos, admin).
+- `public/content-loader.js` se carga en todas las paginas: trae contenido dinamico de `/api/content`, galeria de `/api/gallery`, y links de footer de `/api/pages`.
+- `public/productos.js` (~1300 lineas) maneja toda la logica de tienda: carga productos, carrito (localStorage), sidebar carrito, cotizacion de envio, y checkout Stripe.
+- `public/admin/admin.js` (~2800 lineas) maneja todo el panel admin: CRUD de todas las entidades, drag-and-drop reorder, modales, uploads.
+- `public/pagina.js` carga contenido de paginas dinamicas por slug desde URL params.
+- Cart sidebar incluye cotizacion de envio integrada (postal code -> Skydropx rates -> seleccion de tarifa).
 
-### Pagos
-- `GET /config` — Stripe publishable key
-- `POST /create-checkout-session` — Crear sesión de checkout (valida stock antes)
-- `GET /verify-session/:sessionId` — Verificar pago
-- `POST /webhook` — Webhooks de Stripe (decrementa inventario, envía emails)
+### Email System
 
-### Admin (`/api/admin/`) — Requieren JWT + verifyAdmin
-- CRUD completo para: products, categories, gallery, content, orders, **pages**
-- **Descuentos:** `GET/POST/PATCH /discount-codes` (via Stripe Promotion Codes API)
-- **Galería reorder:** `PATCH /gallery-reorder`
-- **Órdenes:** `GET /orders`, `PATCH /orders/:id/status` (envía email de actualización)
-- Auth: `POST /login`, `POST /change-password`, `GET /me`
-- Upload: `POST /upload/product`, `POST /upload/gallery`
+`lib/email.js` exporta 3 funciones:
+- `sendOrderConfirmation(order)` - al cliente
+- `sendOrderNotification(order)` - al negocio (legadosanjosemx@gmail.com)
+- `sendStatusUpdate(order, newStatus)` - al cliente cuando cambia estado
 
-## Key Features
+Marketing emails se envian desde `routes/admin.js` POST `/subscribers/send-email` usando Resend batch API.
 
-- **Carrito de compras** con persistencia en localStorage
-- **Checkout Stripe** con envío a México, códigos de descuento (promotion codes)
-- **Código interno GOCA** para precios de empleados con envío gratis
-- **Sistema de inventario** — stock por producto (NULL=ilimitado, 0=agotado, N=disponible)
-- **Códigos de descuento** — gestionados via Stripe Promotion Codes API desde admin
-- **Estados de pedido** — pagado → procesado → enviado → entregado
-- **Emails transaccionales** — confirmación al cliente + notificación al negocio + actualización de estado (Resend)
-- **Panel de administración** completo (productos, categorías, galería, contenido, órdenes, descuentos, páginas)
-- **Páginas dinámicas** — 6 páginas legales/info editables desde admin con contenido HTML
-- **Footer dinámico** — links a páginas activas cargados automáticamente desde API
-- **Reorden de galería** — drag-and-drop en admin para reordenar imágenes
-- **Link editable del botón hero** — configurable desde admin (sección contenido)
-- **Modo mantenimiento** controlado desde admin (cache de 5s)
-- **Virtual try-on** con Google Gemini AI
-- **Contenido dinámico** editable desde admin sin tocar código
-- **Categorías dinámicas** con reordenamiento drag-and-drop
+### Shipping (lib/skydropx.js)
+
+- OAuth 2.0 con auto-refresh del token
+- `selectBox(items)` selecciona cajas optimas segun tipo de producto (playera, gorra, mochila, maleta)
+- `getRates()` crea cotizacion y la pollea hasta completar (max 30s)
+- `generateLabel()` crea guia de envio
+- Multi-paquete: cotiza el paquete mas grande y multiplica precio
 
 ## Environment Variables
 
-Requeridas en `.env` (ver `.env.example`):
+Requeridas en `.env`:
 - `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` / `STRIPE_WEBHOOK_SECRET`
 - `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`
 - `GOOGLE_API_KEY` (para Gemini)
 - `JWT_SECRET`
 - `PORT` (default: 3000)
 - `BASE_URL` (para redirects de Stripe)
-- `RESEND_API_KEY` (para emails transaccionales)
-- `RESEND_FROM_EMAIL` (opcional, default: `Legado San José <onboarding@resend.dev>`)
-
-## Commands
-
-```bash
-npm start        # Inicia server en producción
-npm run dev      # Inicia con nodemon (desarrollo)
-```
+- `RESEND_API_KEY` / `RESEND_FROM_EMAIL` (opcional) / `REPLY_TO_EMAIL` (opcional)
+- `SKYDROPX_CLIENT_ID` / `SKYDROPX_CLIENT_SECRET` (opcional, sin ellos usa tarifas fijas)
+- `SKYDROPX_ENV` (`production` o sandbox por default)
+- `SKYDROPX_ORIGIN_*` (direccion de origen: NAME, COMPANY, EMAIL, PHONE, STREET, CITY, STATE, POSTAL_CODE, STATE_FULL, DISTRICT)
 
 ## Migrations
 
-```bash
-# V2 migration (ejecutar en Supabase SQL Editor):
-# - Agrega columna stock a products
-# - Inserta button_link en site_content
-# - Crea tabla pages con RLS, índices y trigger
-# - Inserta 6 páginas placeholder (inactivas)
-# Archivo: supabase/migration_v2.sql
-```
+Ejecutar en orden en Supabase SQL Editor:
+1. `supabase/schema.sql` - Esquema base
+2. `supabase/migration_v2.sql` - Stock, pages, button_link
+3. `supabase/migration_v3.sql` - Funcion `decrement_variant_stock` (stock atomico por variante/talla)
+4. `supabase/migration_v4_shipping.sql` - Columnas de envio en orders, tabla shipping_quotes
+5. `supabase/migration_v5_atomic_stock.sql` - Funcion `decrement_product_stock` (stock general atomico)
 
 ## Development Notes
 
-- **Moneda:** Todos los precios en MXN (enteros en centavos para Stripe)
-- **Idioma:** Todo el contenido y UI está en español
-- **Envío:** Estándar $150/$250 MXN, Express $250/$350 MXN según peso
-- **Imágenes:** Se suben a Supabase Storage, hay script de optimización en Python
-- **RLS:** Row Level Security activo — operaciones admin usan `SUPABASE_SERVICE_ROLE_KEY`
-- **Newsletter:** Se guarda en `subscribers.txt` (archivo plano)
+- **Moneda:** Todos los precios en MXN. Stripe recibe centavos (price * 100).
+- **Idioma:** Todo el contenido y UI esta en espanol.
+- **Inventario:** `stock` NULL = ilimitado, 0 = agotado, N = N piezas. Variantes tienen stock por talla en JSONB (`variant.stock.{size}: qty`).
+- **RLS:** Row Level Security activo. Operaciones admin usan `SUPABASE_SERVICE_ROLE_KEY`.
+- **Paginas dinamicas:** Contenido se renderiza con innerHTML (soporta HTML basico).
+- **Static files:** Express sirve `public/` como directorio estatico. Archivos del backend (server.js, package.json, .env) no son accesibles.
+- **Pedidos:** Estados: pagado -> procesado -> enviado -> entregado. Formato: `LSJ-00001`.
 - **GA4 ID:** G-JT5P73Z3EV
-- **Inventario:** `stock` NULL = sin control (ilimitado), 0 = agotado, N = N piezas disponibles
-- **Emails:** Temporal con `onboarding@resend.dev`, migrar a `pedidos@legadosanjose.com` al verificar dominio en Resend
-- **Páginas dinámicas:** Contenido se renderiza con innerHTML (soporta HTML básico)
-- **Descuentos:** Se usan Stripe Promotion Codes (no sistema custom). El checkout ya tiene `allow_promotion_codes: true`
 
-## Architecture Decisions
+## Known Issues
 
-- Vanilla JS sin frameworks para mantener simplicidad y rendimiento
-- Express sirve archivos estáticos desde el root directory
-- Supabase como BaaS para evitar gestionar BD propia
-- JWT en localStorage para auth de admin (expira en 24h)
-- Middleware de mantenimiento intercepta requests públicos pero no admin/API
-- Stripe Promotion Codes API para descuentos (más seguro que sistema custom)
-- Resend para emails transaccionales (simple, buen free tier)
-- Orden canónica se crea en webhook (más confiable que verify-session)
-- Inventario se decrementa atómicamente en webhook post-pago
-- Páginas dinámicas en tabla separada `pages` (no en `site_content`) para mejor separación
+_Todos los issues previamente listados han sido resueltos._
