@@ -1,3 +1,18 @@
+// Lazy-load Stripe.js only when needed (at checkout)
+let stripePromise = null;
+function loadStripe() {
+    if (!stripePromise) {
+        stripePromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://js.stripe.com/v3/';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    return stripePromise;
+}
+
 // Product Data - Loaded from API (no fallback to avoid showing inactive products)
 
 // ============================================
@@ -969,6 +984,7 @@ async function createStripeCheckoutSession() {
         const { sessionId } = await response.json();
         const configResponse = await fetch('/config');
         const { publishableKey } = await configResponse.json();
+        await loadStripe();
         const stripe = Stripe(publishableKey);
         const { error } = await stripe.redirectToCheckout({ sessionId });
         if (error) throw error;

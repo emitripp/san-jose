@@ -1,7 +1,8 @@
 /* Font Faces */
 @font-face {
     font-family: 'Rawgly';
-    src: url('Fonts/Rawgly.otf') format('opentype');
+    src: url('Fonts/Rawgly.woff2') format('woff2'),
+         url('Fonts/Rawgly.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -9,7 +10,8 @@
 
 @font-face {
     font-family: 'Montserrat';
-    src: url('Fonts/Montserrat-Light.otf') format('opentype');
+    src: url('Fonts/Montserrat-Light.woff2') format('woff2'),
+         url('Fonts/Montserrat-Light.otf') format('opentype');
     font-weight: 300;
     font-style: normal;
     font-display: swap;
@@ -17,7 +19,8 @@
 
 @font-face {
     font-family: 'Montserrat';
-    src: url('Fonts/Montserrat-Regular.otf') format('opentype');
+    src: url('Fonts/Montserrat-Regular.woff2') format('woff2'),
+         url('Fonts/Montserrat-Regular.otf') format('opentype');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -25,7 +28,8 @@
 
 @font-face {
     font-family: 'Montserrat';
-    src: url('Fonts/Montserrat-SemiBold.otf') format('opentype');
+    src: url('Fonts/Montserrat-SemiBold.woff2') format('woff2'),
+         url('Fonts/Montserrat-SemiBold.otf') format('opentype');
     font-weight: 600;
     font-style: normal;
     font-display: swap;
@@ -33,7 +37,8 @@
 
 @font-face {
     font-family: 'Montserrat';
-    src: url('Fonts/Montserrat-Bold.otf') format('opentype');
+    src: url('Fonts/Montserrat-Bold.woff2') format('woff2'),
+         url('Fonts/Montserrat-Bold.otf') format('opentype');
     font-weight: 700;
     font-style: normal;
     font-display: swap;
@@ -41,7 +46,8 @@
 
 @font-face {
     font-family: 'Montserrat';
-    src: url('Fonts/Montserrat-Black.otf') format('opentype');
+    src: url('Fonts/Montserrat-Black.woff2') format('woff2'),
+         url('Fonts/Montserrat-Black.otf') format('opentype');
     font-weight: 900;
     font-style: normal;
     font-display: swap;

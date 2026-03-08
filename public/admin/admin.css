@@ -2,6 +2,31 @@
    ADMIN PANEL STYLES - LEGADO SAN JOSÉ
    ============================================ */
 
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../Fonts/Montserrat-Regular.woff2') format('woff2'),
+         url('../Fonts/Montserrat-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../Fonts/Montserrat-SemiBold.woff2') format('woff2'),
+         url('../Fonts/Montserrat-SemiBold.otf') format('opentype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../Fonts/Montserrat-Bold.woff2') format('woff2'),
+         url('../Fonts/Montserrat-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     --primary: #F5A84F;
     --primary-dark: #E09339;
@@ -483,12 +508,13 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     cursor: default !important;
     transform: none !important;
+    background: #1a1a1a;
 }
 
 #admin-gallery-grid .gallery-item img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     cursor: default !important;
 }
 
@@ -684,16 +710,13 @@ body {
     border-radius: 12px;
     padding: 30px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
 }
 
 .settings-card h3 {
     font-size: 18px;
     color: var(--brown);
     margin-bottom: 25px;
-}
-
-.settings-card {
-    margin-bottom: 30px;
 }
 
 .settings-desc {
@@ -1256,7 +1279,7 @@ input:checked + .slider:before {
     cursor: grab;
     border: 2px solid transparent;
     transition: all 0.2s;
-    background: #f5f5f5;
+    background: #1a1a1a;
 }
 
 .gallery-reorder-item:hover {
@@ -1273,7 +1296,7 @@ input:checked + .slider:before {
 .gallery-reorder-item img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
     pointer-events: none;
 }
