@@ -89,8 +89,11 @@ Marketing emails se envian desde `routes/admin.js` POST `/subscribers/send-email
 - OAuth 2.0 con auto-refresh del token
 - `selectBox(items)` selecciona cajas optimas segun tipo de producto (playera, gorra, mochila, maleta)
 - `getRates()` crea cotizacion y la pollea hasta completar (max 30s)
-- `generateLabel()` crea guia de envio
+- `generateLabel(rateId, destination, parcels, quotationId)` crea guia de envio
 - Multi-paquete: cotiza el paquete mas grande y multiplica precio
+- **Cotizacion original se reusa** si la orden tiene < 24h y `shipping_quotation_id` guardado. El admin auto-genera la guia con el rate_id original del cliente sin mostrar opciones.
+- **Docs API:** `https://pro.skydropx.com/es-MX/api-docs`
+- **POST /api/v1/shipments** requiere `consignment_note` (string, codigo SAT Carta Porte, ej: `"53102400"`) y `package_type` (string, codigo empaque, ej: `"4G"` = caja carton) a nivel de shipment (NO dentro de parcels). Tambien requiere `reference` en address_from y address_to.
 
 ## Environment Variables
 
@@ -114,6 +117,7 @@ Ejecutar en orden en Supabase SQL Editor:
 3. `supabase/migration_v3.sql` - Funcion `decrement_variant_stock` (stock atomico por variante/talla)
 4. `supabase/migration_v4_shipping.sql` - Columnas de envio en orders, tabla shipping_quotes
 5. `supabase/migration_v5_atomic_stock.sql` - Funcion `decrement_product_stock` (stock general atomico)
+6. `supabase/migration_v6_shipping_quotation.sql` - quotation_id en shipping_quotes, shipping_quotation_id y shipping_rate_id en orders
 
 ## Development Notes
 
