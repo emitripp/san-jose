@@ -996,6 +996,33 @@ router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
         const postalCode = order.destination_postal_code || order.customer?.address?.postal_code;
         if (!postalCode) return res.status(400).json({ error: 'La orden no tiene código postal' });
 
+        // Intentar reusar cotizacion original si < 24h
+        const orderAge = Date.now() - new Date(order.created_at).getTime();
+        const canReuseQuote = order.shipping_quotation_id && orderAge < 24 * 60 * 60 * 1000;
+
+        if (canReuseQuote) {
+            const { data: cachedQuote } = await supabaseAdmin
+                .from('shipping_quotes')
+                .select('*')
+                .eq('quotation_id', order.shipping_quotation_id)
+                .single();
+
+            if (cachedQuote?.rates?.length) {
+                return res.json({
+                    quotationId: order.shipping_quotation_id,
+                    rates: cachedQuote.rates,
+                    packages: cachedQuote.packages,
+                    originalRateId: order.shipping_rate_id,
+                    canReuseOriginal: true,
+                    customerChoice: {
+                        carrier: order.shipping_carrier || null,
+                        service: order.shipping_service || null
+                    }
+                });
+            }
+        }
+
+        // Fallback: re-cotizar (orden vieja o sin cotizacion guardada)
         const addr = order.customer?.address || {};
         const destination = {
             area_level1: addr.state || '',
@@ -1007,6 +1034,7 @@ router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
         const { quotationId, rates } = await skydropx.getRates(postalCode, destination, packages);
         res.json({
             quotationId, rates, packages,
+            canReuseOriginal: false,
             customerChoice: {
                 carrier: order.shipping_carrier || null,
                 service: order.shipping_service || null
@@ -1021,7 +1049,7 @@ router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
 // POST /api/admin/orders/:id/generate-label - Generate shipping label
 router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
     try {
-        const { rateId } = req.body;
+        const { rateId, quotationId } = req.body;
         if (!rateId) return res.status(400).json({ error: 'rateId es requerido' });
 
         const { data: order, error } = await supabaseAdmin
@@ -1043,7 +1071,7 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
         };
 
         const parcels = order.shipping_packages || skydropx.selectBox(order.items || []);
-        const result = await skydropx.generateLabel(rateId, destination, parcels);
+        const result = await skydropx.generateLabel(rateId, destination, parcels, quotationId || null);
 
         // Update order with tracking info
         const updateData = {

@@ -266,6 +266,7 @@ app.post('/api/shipping/rates', async (req, res) => {
         if (supabaseAdmin) {
             await supabaseAdmin.from('shipping_quotes').insert({
                 quote_token: quoteToken,
+                quotation_id: quotationId || null,
                 postal_code: postalCode,
                 packages: packages,
                 rates: rates,
@@ -478,6 +479,8 @@ app.post('/create-checkout-session', async (req, res) => {
                 ...(quote && {
                     shippingCarrier: quote.rates.find(r => r.id === selectedRateId)?.carrier || '',
                     shippingService: quote.rates.find(r => r.id === selectedRateId)?.service || '',
+                    shippingQuotationId: quote.quotation_id || '',
+                    shippingRateId: selectedRateId || '',
                     destinationPostalCode: quote.postal_code || '',
                     shippingPackages: JSON.stringify(quote.packages || [])
                 })
@@ -649,6 +652,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                             status: 'pagado',
                             shipping_carrier: shippingMeta.shippingCarrier || null,
                             shipping_service: shippingMeta.shippingService || null,
+                            shipping_quotation_id: shippingMeta.shippingQuotationId || null,
+                            shipping_rate_id: shippingMeta.shippingRateId || null,
                             destination_postal_code: shippingMeta.destinationPostalCode || null,
                             shipping_packages: shippingMeta.shippingPackages ? JSON.parse(shippingMeta.shippingPackages) : null
                         })

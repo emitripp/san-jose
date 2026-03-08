@@ -2509,24 +2509,29 @@ async function openGenerateLabelModal(orderId) {
         if (!res.ok) throw new Error(data.error);
 
         const choice = data.customerChoice;
+        const quotationId = data.quotationId || '';
         const ratesHtml = data.rates.map(rate => {
-            const isChoice = choice && choice.carrier === rate.carrier && choice.service === rate.service;
+            const isOriginalRate = data.canReuseOriginal && data.originalRateId === rate.id;
+            const isChoice = isOriginalRate || (choice && choice.carrier === rate.carrier && choice.service === rate.service);
             const borderColor = isChoice ? '#7c3aed' : '#ddd';
             const bgColor = isChoice ? '#f5f0ff' : 'transparent';
             return `
             <div style="border: 2px solid ${borderColor}; background: ${bgColor}; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong>${rate.carrier}</strong> - ${rate.service}
-                    ${isChoice ? '<br><small style="color: #7c3aed; font-weight: 600;">Elegida por el cliente</small>' : ''}
+                    ${isOriginalRate ? '<br><small style="color: #7c3aed; font-weight: 600;">Tarifa elegida por el cliente</small>' : isChoice ? '<br><small style="color: #7c3aed; font-weight: 600;">Elegida por el cliente</small>' : ''}
                     ${rate.days ? `<br><small style="color: #888;">${rate.days} dias habiles</small>` : ''}
                 </div>
                 <div style="text-align: right;">
                     <div style="font-weight: 700;">$${rate.price.toLocaleString('es-MX')} MXN</div>
-                    <button onclick="generateShippingLabel('${orderId}', '${rate.id}')" style="background: ${isChoice ? '#7c3aed' : '#555'}; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; margin-top: 4px; font-size: 0.85rem;">${isChoice ? 'Generar' : 'Generar'}</button>
+                    <button onclick="generateShippingLabel('${orderId}', '${rate.id}', '${quotationId}')" style="background: ${isChoice ? '#7c3aed' : '#555'}; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; margin-top: 4px; font-size: 0.85rem;">Generar</button>
                 </div>
             </div>`;
         }).join('');
 
+        const reuseNote = data.canReuseOriginal
+            ? '<p style="margin-bottom: 8px; color: #16a34a; font-weight: 500; font-size: 0.9rem;">Cotizacion original disponible (&lt; 24h)</p>'
+            : '';
         const choiceNote = choice && choice.carrier
             ? `<p style="margin-bottom: 12px; color: #7c3aed; font-weight: 500;">El cliente eligio: ${choice.carrier} - ${choice.service}</p>`
             : '';
@@ -2534,6 +2539,7 @@ async function openGenerateLabelModal(orderId) {
         document.getElementById('confirm-message').innerHTML = `
             <div style="max-width: 450px;">
                 <p style="margin-bottom: 8px;">Selecciona la paqueteria para generar la guia:</p>
+                ${reuseNote}
                 ${choiceNote}
                 ${ratesHtml}
             </div>
@@ -2543,14 +2549,16 @@ async function openGenerateLabelModal(orderId) {
     }
 }
 
-async function generateShippingLabel(orderId, rateId) {
+async function generateShippingLabel(orderId, rateId, quotationId) {
     document.getElementById('confirm-message').innerHTML = '<p style="text-align:center;">Generando guía...</p>';
 
     try {
+        const body = { rateId };
+        if (quotationId) body.quotationId = quotationId;
         const res = await fetch(`${API_BASE}/orders/${orderId}/generate-label`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rateId })
+            body: JSON.stringify(body)
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
