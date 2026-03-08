@@ -2510,16 +2510,26 @@ async function openGenerateLabelModal(orderId) {
 
         const choice = data.customerChoice;
         const quotationId = data.quotationId || '';
+
+        // Si hay cotización original < 24h con rate_id exacto, generar directo
+        if (data.canReuseOriginal && data.originalRateId) {
+            const originalRate = data.rates.find(r => r.id === data.originalRateId);
+            const rateLabel = originalRate ? `${originalRate.carrier} - ${originalRate.service}` : `${choice.carrier} - ${choice.service}`;
+            document.getElementById('confirm-message').innerHTML = `<p style="text-align:center;">Generando guia con ${rateLabel}...</p>`;
+            generateShippingLabel(orderId, data.originalRateId, quotationId);
+            return;
+        }
+
+        // Fallback: mostrar opciones para órdenes viejas o sin cotización original
         const ratesHtml = data.rates.map(rate => {
-            const isOriginalRate = data.canReuseOriginal && data.originalRateId === rate.id;
-            const isChoice = isOriginalRate || (choice && choice.carrier === rate.carrier && choice.service === rate.service);
+            const isChoice = choice && choice.carrier === rate.carrier && choice.service === rate.service;
             const borderColor = isChoice ? '#7c3aed' : '#ddd';
             const bgColor = isChoice ? '#f5f0ff' : 'transparent';
             return `
             <div style="border: 2px solid ${borderColor}; background: ${bgColor}; border-radius: 8px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <strong>${rate.carrier}</strong> - ${rate.service}
-                    ${isOriginalRate ? '<br><small style="color: #7c3aed; font-weight: 600;">Tarifa elegida por el cliente</small>' : isChoice ? '<br><small style="color: #7c3aed; font-weight: 600;">Elegida por el cliente</small>' : ''}
+                    ${isChoice ? '<br><small style="color: #7c3aed; font-weight: 600;">Elegida por el cliente</small>' : ''}
                     ${rate.days ? `<br><small style="color: #888;">${rate.days} dias habiles</small>` : ''}
                 </div>
                 <div style="text-align: right;">
@@ -2529,9 +2539,6 @@ async function openGenerateLabelModal(orderId) {
             </div>`;
         }).join('');
 
-        const reuseNote = data.canReuseOriginal
-            ? '<p style="margin-bottom: 8px; color: #16a34a; font-weight: 500; font-size: 0.9rem;">Cotizacion original disponible (&lt; 24h)</p>'
-            : '';
         const choiceNote = choice && choice.carrier
             ? `<p style="margin-bottom: 12px; color: #7c3aed; font-weight: 500;">El cliente eligio: ${choice.carrier} - ${choice.service}</p>`
             : '';
@@ -2539,7 +2546,6 @@ async function openGenerateLabelModal(orderId) {
         document.getElementById('confirm-message').innerHTML = `
             <div style="max-width: 450px;">
                 <p style="margin-bottom: 8px;">Selecciona la paqueteria para generar la guia:</p>
-                ${reuseNote}
                 ${choiceNote}
                 ${ratesHtml}
             </div>
