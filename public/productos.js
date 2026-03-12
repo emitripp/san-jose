@@ -823,6 +823,7 @@ function showShippingView() {
     document.getElementById('shipping-error').style.display = 'none';
     document.getElementById('shipping-loading').style.display = 'none';
     document.getElementById('shipping-continue-btn').style.display = 'none';
+    document.getElementById('shipping-footer').style.display = 'none';
     document.getElementById('shipping-postal-code').value = '';
     document.getElementById('shipping-state').value = '';
     document.getElementById('shipping-city').value = '';
@@ -936,6 +937,7 @@ function selectShippingRate(rateId) {
     document.querySelectorAll('.shipping-rate-card').forEach(card => {
         card.classList.toggle('selected', card.dataset.rateId === rateId);
     });
+    document.getElementById('shipping-footer').style.display = 'block';
     document.getElementById('shipping-continue-btn').style.display = 'block';
 }
 

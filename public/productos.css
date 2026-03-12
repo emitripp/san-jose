@@ -1186,13 +1186,14 @@
 }
 
 .shipping-footer {
-    position: sticky;
-    bottom: 0;
-    padding: 16px 24px;
-    margin: 0 12px 12px;
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    padding: 16px;
     background: var(--white);
     border-radius: 12px;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.18);
     z-index: 10;
 }
 
