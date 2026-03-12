@@ -1178,10 +1178,22 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
+    position: relative;
 }
 
 .shipping-form-container {
-    padding: 20px 30px 30px;
+    padding: 20px 30px 100px;
+}
+
+.shipping-footer {
+    position: sticky;
+    bottom: 0;
+    padding: 16px 24px;
+    margin: 0 12px 12px;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+    z-index: 10;
 }
 
 .cart-back {
