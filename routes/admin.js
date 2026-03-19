@@ -1075,7 +1075,7 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
 
         // Update order with tracking info
         const updateData = {
-            status: 'enviado',
+            status: 'procesado',
             tracking_number: result.trackingNumber,
             tracking_url: result.trackingUrl,
             label_url: result.labelUrl,
@@ -1086,7 +1086,7 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
 
         // Send email to customer
         try {
-            await sendStatusUpdate({ ...order, ...updateData }, 'enviado');
+            await sendStatusUpdate({ ...order, ...updateData }, 'procesado');
         } catch (emailError) {
             console.error('Error sending shipping email:', emailError);
         }
