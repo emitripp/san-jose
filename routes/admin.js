@@ -1062,7 +1062,8 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
         const addr = order.customer?.address || {};
         const destination = {
             name: order.customer?.name || 'Cliente',
-            street1: [addr.line1, addr.line2].filter(Boolean).join(', ') || 'Sin dirección',
+            street1: (addr.line1 || 'Sin dirección').substring(0, 45),
+            street2: addr.line2 || '',
             city: addr.city || '',
             province: addr.state || '',
             zip: addr.postal_code || order.destination_postal_code || '',
