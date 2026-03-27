@@ -770,9 +770,10 @@ function saveCart() {
     localStorage.setItem('legado_cart', JSON.stringify(cart));
 }
 
-// --- Shipping state ---
+// --- Shipping & delivery state ---
 let shippingQuoteToken = null;
 let shippingSelectedRateId = null;
+let deliveryMethod = null; // 'shipping' or 'pickup'
 
 // Proceed to Checkout
 async function proceedToCheckout() {
@@ -810,8 +811,48 @@ async function proceedToCheckout() {
             checkoutBtn.disabled = false;
         }
     } else {
-        // Normal order: show shipping view inside sidebar
+        // Normal order: show delivery method selection
+        showDeliveryView();
+    }
+}
+
+function showDeliveryView() {
+    deliveryMethod = null;
+    // Reset selection state
+    document.querySelectorAll('.delivery-option').forEach(el => el.classList.remove('selected'));
+    document.getElementById('pickup-details').style.display = 'none';
+    document.getElementById('delivery-footer').style.display = 'none';
+    // Switch views
+    document.getElementById('cart-main-view').style.display = 'none';
+    document.getElementById('cart-delivery-view').style.display = 'block';
+    document.getElementById('cart-shipping-view').style.display = 'none';
+    document.getElementById('cart-title').textContent = 'Método de Entrega';
+    document.getElementById('cart-back').style.display = 'flex';
+}
+
+function selectDeliveryMethod(method) {
+    deliveryMethod = method;
+    document.querySelectorAll('.delivery-option').forEach(el => el.classList.remove('selected'));
+    document.getElementById(`delivery-option-${method}`).classList.add('selected');
+    document.getElementById('pickup-details').style.display = method === 'pickup' ? 'block' : 'none';
+    document.getElementById('delivery-footer').style.display = 'block';
+}
+
+async function continueFromDelivery() {
+    if (!deliveryMethod) return;
+    if (deliveryMethod === 'shipping') {
         showShippingView();
+    } else {
+        // Pickup: go straight to Stripe
+        const btn = document.getElementById('delivery-continue-btn');
+        btn.textContent = 'Procesando...';
+        btn.disabled = true;
+        try {
+            await createStripeCheckoutSession();
+        } catch (error) {
+            btn.textContent = 'Continuar';
+            btn.disabled = false;
+        }
     }
 }
 
@@ -827,6 +868,8 @@ function showShippingView() {
     document.getElementById('shipping-postal-code').value = '';
     document.getElementById('shipping-state').value = '';
     document.getElementById('shipping-city').value = '';
+    // Hide delivery view
+    document.getElementById('cart-delivery-view').style.display = 'none';
     document.getElementById('shipping-neighborhood').value = '';
     // Switch views
     document.getElementById('cart-main-view').style.display = 'none';
@@ -837,7 +880,9 @@ function showShippingView() {
 }
 
 function showCartView() {
+    document.getElementById('cart-delivery-view').style.display = 'none';
     document.getElementById('cart-shipping-view').style.display = 'none';
+    document.getElementById('shipping-footer').style.display = 'none';
     document.getElementById('cart-main-view').style.display = 'flex';
     document.getElementById('cart-title').textContent = 'Carrito de Compras';
     document.getElementById('cart-back').style.display = 'none';
@@ -974,7 +1019,8 @@ async function createStripeCheckoutSession() {
                 })),
                 pickupCode: document.getElementById('internal-code')?.value.trim(),
                 quoteToken: shippingQuoteToken,
-                selectedRateId: shippingSelectedRateId
+                selectedRateId: shippingSelectedRateId,
+                deliveryMethod: deliveryMethod || 'shipping'
             })
         });
 
@@ -997,9 +1043,17 @@ async function createStripeCheckoutSession() {
     }
 }
 
-// Shipping view event listeners
+// Shipping & delivery view event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('cart-back')?.addEventListener('click', showCartView);
+    document.getElementById('cart-back')?.addEventListener('click', () => {
+        // If we're in shipping view, go back to delivery view; otherwise go to cart
+        if (document.getElementById('cart-shipping-view').style.display !== 'none') {
+            showDeliveryView();
+        } else {
+            showCartView();
+        }
+    });
+    document.getElementById('delivery-continue-btn')?.addEventListener('click', continueFromDelivery);
     document.getElementById('shipping-continue-btn')?.addEventListener('click', continueToStripeFromShipping);
     document.getElementById('shipping-search-btn')?.addEventListener('click', fetchShippingRates);
 

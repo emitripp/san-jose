@@ -285,7 +285,7 @@ app.post('/api/shipping/rates', async (req, res) => {
 // Endpoint para crear sesión de checkout de Stripe
 app.post('/create-checkout-session', async (req, res) => {
     try {
-        const { items, pickupCode, quoteToken, selectedRateId } = req.body;
+        const { items, pickupCode, quoteToken, selectedRateId, deliveryMethod } = req.body;
 
         // Validar stock antes de crear sesión
         if (supabaseAdmin) {
@@ -363,6 +363,19 @@ app.post('/create-checkout-session', async (req, res) => {
                     delivery_estimate: {
                         minimum: { unit: 'business_day', value: 1 },
                         maximum: { unit: 'business_day', value: 2 },
+                    },
+                },
+            }];
+        } else if (deliveryMethod === 'pickup') {
+            // Customer pickup: free, no shipping
+            shippingOptions = [{
+                shipping_rate_data: {
+                    type: 'fixed_amount',
+                    fixed_amount: { amount: 0, currency: 'mxn' },
+                    display_name: 'Recoger en Oficina',
+                    delivery_estimate: {
+                        minimum: { unit: 'business_day', value: 1 },
+                        maximum: { unit: 'business_day', value: 3 },
                     },
                 },
             }];
@@ -476,6 +489,7 @@ app.post('/create-checkout-session', async (req, res) => {
             shipping_options: shippingOptions,
             metadata: {
                 items: JSON.stringify(items),
+                deliveryMethod: deliveryMethod || 'shipping',
                 ...(quote && {
                     shippingCarrier: quote.rates.find(r => r.id === selectedRateId)?.carrier || '',
                     shippingService: quote.rates.find(r => r.id === selectedRateId)?.service || '',

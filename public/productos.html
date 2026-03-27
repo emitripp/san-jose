@@ -141,6 +141,71 @@
             </div>
         </div>
 
+        <!-- Vista 1.5: Método de Entrega -->
+        <div id="cart-delivery-view" style="display:none;">
+            <div class="delivery-method-container">
+                <p style="color: #666; margin-bottom: 20px;">¿Cómo deseas recibir tu pedido?</p>
+
+                <div class="delivery-option" id="delivery-option-shipping" onclick="selectDeliveryMethod('shipping')">
+                    <div class="delivery-option-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="1" y="6" width="15" height="12" rx="1"/>
+                            <polyline points="16 10 20 10 23 13 23 18 16 18 16 6"/>
+                            <circle cx="5.5" cy="20" r="2"/>
+                            <circle cx="18.5" cy="20" r="2"/>
+                        </svg>
+                    </div>
+                    <div class="delivery-option-info">
+                        <span class="delivery-option-title">Envío a Domicilio</span>
+                        <span class="delivery-option-desc">Recibe tu pedido en la puerta de tu casa</span>
+                    </div>
+                    <div class="delivery-option-check">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="delivery-option" id="delivery-option-pickup" onclick="selectDeliveryMethod('pickup')">
+                    <div class="delivery-option-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </div>
+                    <div class="delivery-option-info">
+                        <span class="delivery-option-title">Recoger en Oficina</span>
+                        <span class="delivery-option-desc">Sin costo de envío · Recoge en nuestra ubicación</span>
+                    </div>
+                    <div class="delivery-option-check">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <div id="pickup-details" class="pickup-details" style="display:none;">
+                    <div class="pickup-location-card">
+                        <strong>Ubicación de Recolección</strong>
+                        <p>Legado San José</p>
+                        <p>Manuel Vargas Cataño, San Antonio el Desmonte</p>
+                        <p>Pachuca de Soto, Hidalgo, CP 42111</p>
+                        <a href="https://maps.google.com/?q=TrippGo+Fabricantes+Ropa+y+Personalizado" target="_blank" rel="noopener" class="pickup-maps-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            Abrir en Google Maps
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="delivery-footer" id="delivery-footer" style="display:none;">
+                <button id="delivery-continue-btn" class="shipping-continue-btn">Continuar</button>
+            </div>
+        </div>
+
         <!-- Vista 2: Envío -->
         <div id="cart-shipping-view" style="display:none;">
             <div class="shipping-form-container">

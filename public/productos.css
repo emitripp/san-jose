@@ -1163,6 +1163,135 @@
 }
 
 /* ============================================
+   DELIVERY METHOD SELECTION
+   ============================================ */
+
+#cart-delivery-view {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    position: relative;
+}
+
+.delivery-method-container {
+    padding: 20px 30px 100px;
+}
+
+.delivery-option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: var(--white);
+}
+
+.delivery-option:hover {
+    border-color: #c9a96e;
+    background: #faf7f2;
+}
+
+.delivery-option.selected {
+    border-color: var(--brown, #8B6914);
+    background: #faf7f2;
+    box-shadow: 0 2px 8px rgba(139, 105, 20, 0.12);
+}
+
+.delivery-option-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f0e8;
+    border-radius: 10px;
+    color: #8B6914;
+}
+
+.delivery-option.selected .delivery-option-icon {
+    background: #8B6914;
+    color: white;
+}
+
+.delivery-option-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.delivery-option-title {
+    font-weight: 600;
+    font-size: 1em;
+    color: #333;
+}
+
+.delivery-option-desc {
+    font-size: 0.82em;
+    color: #888;
+}
+
+.delivery-option-check {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    color: var(--brown, #8B6914);
+    transition: opacity 0.2s ease;
+}
+
+.delivery-option.selected .delivery-option-check {
+    opacity: 1;
+}
+
+.pickup-details {
+    margin-top: 8px;
+    animation: fadeInDown 0.3s ease;
+}
+
+.pickup-location-card {
+    background: #f9f6f1;
+    border: 1px solid #e8e0d0;
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-size: 0.9em;
+    color: #555;
+    line-height: 1.6;
+}
+
+.pickup-location-card strong {
+    color: #333;
+    display: block;
+    margin-bottom: 6px;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.delivery-footer {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    padding: 16px;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.18);
+    z-index: 10;
+}
+
+/* ============================================
    CART SIDEBAR VIEWS
    ============================================ */
 
@@ -1358,6 +1487,50 @@
 @media (max-width: 500px) {
     .shipping-row {
         flex-direction: column;
+    }
+}
+
+/* Pickup Google Maps button */
+.pickup-maps-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 10px 16px;
+    background: #8B6914;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+.pickup-maps-btn:hover {
+    background: #6d5310;
+}
+
+/* Delivery view responsive */
+@media (max-width: 768px) {
+    .delivery-method-container {
+        padding: 16px 20px 100px;
+    }
+    .delivery-option {
+        padding: 14px 12px;
+        gap: 10px;
+    }
+    .delivery-option-icon {
+        width: 40px;
+        height: 40px;
+    }
+    .delivery-option-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+    .delivery-option-title {
+        font-size: 0.95em;
+    }
+    .delivery-option-desc {
+        font-size: 0.78em;
     }
 }
 
