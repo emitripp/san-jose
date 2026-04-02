@@ -465,6 +465,7 @@ app.post('/create-checkout-session', async (req, res) => {
         });
 
         // Crear sesión de Stripe Checkout
+        const needsShippingAddress = deliveryMethod !== 'pickup' && !isInternalOrder;
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: lineItems,
@@ -472,9 +473,11 @@ app.post('/create-checkout-session', async (req, res) => {
             allow_promotion_codes: true, // Habilitar códigos de descuento
             success_url: `${process.env.BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.BASE_URL}/productos.html`,
-            shipping_address_collection: {
-                allowed_countries: ['MX'], // Solo México
-            },
+            ...(needsShippingAddress && {
+                shipping_address_collection: {
+                    allowed_countries: ['MX'],
+                },
+            }),
             phone_number_collection: {
                 enabled: true,
             },
