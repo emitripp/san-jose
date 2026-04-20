@@ -1074,9 +1074,9 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
         const parcels = order.shipping_packages || skydropx.selectBox(order.items || []);
         const result = await skydropx.generateLabel(rateId, destination, parcels, quotationId || null);
 
-        // Update order with tracking info
+        // Update order with tracking info and mark as enviado
         const updateData = {
-            status: 'procesado',
+            status: 'enviado',
             tracking_number: result.trackingNumber,
             tracking_url: result.trackingUrl,
             label_url: result.labelUrl,
@@ -1085,9 +1085,9 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
 
         await supabaseAdmin.from('orders').update(updateData).eq('id', req.params.id);
 
-        // Send email to customer
+        // Send tracking email to customer
         try {
-            await sendStatusUpdate({ ...order, ...updateData }, 'procesado');
+            await sendStatusUpdate({ ...order, ...updateData }, 'enviado');
         } catch (emailError) {
             console.error('Error sending shipping email:', emailError);
         }
