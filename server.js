@@ -179,8 +179,18 @@ app.get('/producto/:slug', async (req, res) => {
 });
 
 // Main Static delivery — extensions: ['html'] permite servir productos.html cuando piden /productos
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d', extensions: ['html'] }));
-app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { maxAge: '7d', extensions: ['html'] }));
+// HTML se sirve sin cache para que cambios se propaguen al instante; assets (JS/CSS/imgs) cachean 7d.
+const staticOpts = {
+    maxAge: '7d',
+    extensions: ['html'],
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+        }
+    }
+};
+app.use(express.static(path.join(__dirname, 'public'), staticOpts));
+app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), staticOpts));
 
 // API Routes
 app.use('/api/admin', adminRoutes);
