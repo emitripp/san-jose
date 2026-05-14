@@ -91,7 +91,7 @@
             if (!pages || pages.length === 0) return;
 
             footerList.innerHTML = pages.map(page =>
-                `<li><a href="pagina.html?slug=${page.slug}">${page.title}</a></li>`
+                `<li><a href="/pagina?slug=${page.slug}">${page.title}</a></li>`
             ).join('');
 
         } catch (error) {

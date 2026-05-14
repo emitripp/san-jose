@@ -102,9 +102,28 @@ app.use((req, res, next) => {
     }
 });
 
-// Main Static delivery
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d' }));
-app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { maxAge: '7d' }));
+// Redirect 301: /algo.html -> /algo y /index(.html) -> /  (preserva query string).
+app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    if (req.path === '/index.html' || req.path === '/index') {
+        return res.redirect(301, '/' + qs);
+    }
+    if (req.path.endsWith('.html') && req.path !== '/maintenance.html') {
+        return res.redirect(301, req.path.slice(0, -5) + qs);
+    }
+    next();
+});
+
+// Ruta para deep-link de categorias: /productos/<slug> sirve productos.html
+// (el JS en productos.js lee la categoria del pathname y aplica el filtro)
+app.get('/productos/:slug', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'productos.html'));
+});
+
+// Main Static delivery — extensions: ['html'] permite servir productos.html cuando piden /productos
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d', extensions: ['html'] }));
+app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { maxAge: '7d', extensions: ['html'] }));
 
 // API Routes
 app.use('/api/admin', adminRoutes);
@@ -471,8 +490,8 @@ app.post('/create-checkout-session', async (req, res) => {
             line_items: lineItems,
             mode: 'payment',
             allow_promotion_codes: true, // Habilitar códigos de descuento
-            success_url: `${process.env.BASE_URL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.BASE_URL}/productos.html`,
+            success_url: `${process.env.BASE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.BASE_URL}/productos`,
             ...(needsShippingAddress && {
                 shipping_address_collection: {
                     allowed_countries: ['MX'],

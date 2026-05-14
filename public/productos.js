@@ -122,16 +122,24 @@ async function loadCategoriesFromAPI() {
     }
 }
 
+// Lee la categoria del pathname (ej. /productos/llaveros -> "llaveros")
+function getCategoryFromUrl() {
+    const match = window.location.pathname.match(/^\/productos\/([^\/]+)\/?$/);
+    return match ? decodeURIComponent(match[1]) : 'all';
+}
+
 // Render filter buttons dynamically
 function renderFilterButtons() {
     const filterContainer = document.querySelector('.filter-buttons');
     if (!filterContainer) return;
 
+    const activeSlug = getCategoryFromUrl();
+
     // Create "Todos" button + category buttons
     filterContainer.innerHTML = `
-        <button class="filter-btn active" data-filter="all">Todos</button>
+        <button class="filter-btn ${activeSlug === 'all' ? 'active' : ''}" data-filter="all">Todos</button>
         ${categoriesData.map(cat => `
-            <button class="filter-btn" data-filter="${cat.slug}">${cat.name}</button>
+            <button class="filter-btn ${activeSlug === cat.slug ? 'active' : ''}" data-filter="${cat.slug}">${cat.name}</button>
         `).join('')}
     `;
 
@@ -141,6 +149,9 @@ function renderFilterButtons() {
             filterContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const filter = btn.getAttribute('data-filter');
+            // Actualiza URL sin recargar para que se pueda copiar/compartir
+            const newPath = filter === 'all' ? '/productos' : `/productos/${filter}`;
+            history.replaceState(null, '', newPath + window.location.search + window.location.hash);
             renderProducts(filter);
         });
     });
@@ -165,8 +176,8 @@ async function loadProductsFromAPI() {
         productsData = [];
     }
 
-    // Render products after loading
-    renderProducts();
+    // Render products after loading (aplica filtro de la URL si existe)
+    renderProducts(getCategoryFromUrl());
     updateCartUI();
     preloadImages();
 }
@@ -261,7 +272,8 @@ function renderProducts(filter = 'all') {
 
 // Setup Event Listeners
 function setupEventListeners() {
-    // Filter buttons
+    // Filter buttons (fallback si la API de categorias no carga;
+    // si carga, renderFilterButtons reemplaza estos botones y handlers)
     const filterBtns = document.querySelectorAll('.filter-btn');
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
@@ -269,6 +281,8 @@ function setupEventListeners() {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 const filter = btn.getAttribute('data-filter');
+                const newPath = filter === 'all' ? '/productos' : `/productos/${filter}`;
+                history.replaceState(null, '', newPath + window.location.search + window.location.hash);
                 renderProducts(filter);
             });
         });

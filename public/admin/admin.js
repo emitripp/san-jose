@@ -1337,17 +1337,17 @@ function renderContent() {
 
     // Build page link options for button_link select
     const linkOptions = [
-        { value: 'productos.html', label: 'Productos (Tienda)' },
-        { value: 'index.html#contacto', label: 'Contacto' },
-        { value: 'index.html#galeria', label: 'Galería' },
-        { value: 'index.html#nosotros', label: 'Nosotros' },
+        { value: '/productos', label: 'Productos (Tienda)' },
+        { value: '/#contacto', label: 'Contacto' },
+        { value: '/#galeria', label: 'Galería' },
+        { value: '/#nosotros', label: 'Nosotros' },
     ];
     // Add dynamic pages
     if (currentPages && currentPages.length > 0) {
         currentPages
             .filter(p => p.is_active)
             .forEach(p => {
-                linkOptions.push({ value: `pagina.html?slug=${p.slug}`, label: p.title });
+                linkOptions.push({ value: `/pagina?slug=${p.slug}`, label: p.title });
             });
     }
 
@@ -1371,7 +1371,7 @@ function renderContent() {
 
                 // Special: button_link renders as a select dropdown
                 if (item.key === 'button_link') {
-                    const currentVal = item.content || 'productos.html';
+                    const currentVal = item.content || '/productos';
                     return `
                     <div class="form-group">
                         <label>${label}</label>
@@ -2103,7 +2103,7 @@ function renderPages() {
             ${currentPages.map(page => `
                 <div class="category-row" data-id="${page.id}">
                     <span class="category-name">${page.title}</span>
-                    <span class="category-slug">/pagina.html?slug=${page.slug}</span>
+                    <span class="category-slug">/pagina?slug=${page.slug}</span>
                     <span class="category-status ${page.is_active ? 'active' : 'inactive'}">
                         ${page.is_active ? 'Activa' : 'Inactiva'}
                     </span>
