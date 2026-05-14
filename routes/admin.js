@@ -16,6 +16,19 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+// Sanitiza nombres de archivo para Supabase Storage:
+// - corrige el latin1 que mete multer (ej. "JosÃ©" -> "José")
+// - quita acentos y diacríticos
+// - reemplaza cualquier carácter fuera de [a-zA-Z0-9._-] por "_"
+function sanitizeFileName(originalName) {
+    const fixed = Buffer.from(originalName, 'latin1').toString('utf8');
+    return fixed
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-zA-Z0-9._-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+}
+
 // ============================================
 // MIDDLEWARE: Verify Admin JWT Token
 // ============================================
@@ -348,7 +361,7 @@ router.post('/upload/product', verifyAdmin, upload.single('image'), async (req, 
         }
 
         const file = req.file;
-        const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+        const fileName = `${Date.now()}-${sanitizeFileName(file.originalname)}`;
         const filePath = `products/${fileName}`;
 
         const { data, error } = await supabaseAdmin.storage
@@ -384,7 +397,7 @@ router.post('/upload/gallery', verifyAdmin, upload.single('image'), async (req, 
         }
 
         const file = req.file;
-        const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
+        const fileName = `${Date.now()}-${sanitizeFileName(file.originalname)}`;
         const filePath = `gallery/${fileName}`;
 
         const { data, error } = await supabaseAdmin.storage
