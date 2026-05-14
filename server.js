@@ -160,30 +160,15 @@ app.get('/producto/:slug', async (req, res) => {
         const descShort = truncate(descPlain || `Compra ${p.name} — Legado San José`, 160);
         const priceFmt = Number(p.price).toLocaleString('es-MX');
 
-        const productJson = JSON.stringify({
-            id: p.id,
-            slug: p.slug,
-            name: p.name,
-            price: p.price,
-            category: p.category,
-            description: p.description,
-            image: p.image_url,
-            images: p.images || [],
-            gradient: p.gradient,
-            sizes: p.sizes || [],
-            variants: p.variants || [],
-            stock: p.stock
-        }).replace(/<\//g, '<\\/'); // evita romper el </script> contenedor
-
         const html = getProductoTemplate()
             .replace(/\{\{NAME\}\}/g, escapeHtml(p.name))
             .replace(/\{\{DESCRIPTION_SHORT\}\}/g, escapeHtml(descShort))
             .replace(/\{\{DESCRIPTION\}\}/g, escapeHtml(descPlain))
             .replace(/\{\{IMAGE_ABS\}\}/g, escapeHtml(imageAbs))
             .replace(/\{\{PAGE_URL\}\}/g, escapeHtml(pageUrl))
+            .replace(/\{\{SLUG_URLSAFE\}\}/g, encodeURIComponent(p.slug))
             .replace(/\{\{PRICE\}\}/g, String(p.price))
-            .replace(/\{\{PRICE_FMT\}\}/g, priceFmt)
-            .replace(/\{\{PRODUCT_JSON\}\}/g, productJson);
+            .replace(/\{\{PRICE_FMT\}\}/g, priceFmt);
 
         res.set('Cache-Control', 'no-store');
         res.send(html);

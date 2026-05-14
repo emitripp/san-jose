@@ -180,6 +180,18 @@ async function loadProductsFromAPI() {
     renderProducts(getCategoryFromUrl());
     updateCartUI();
     preloadImages();
+
+    // Si el URL trae ?p=<slug>, abrimos el modal del producto correspondiente.
+    // (Sirve para los links compartidos: /producto/<slug> redirige a /productos?p=<slug>.)
+    const params = new URLSearchParams(window.location.search);
+    const slugParam = params.get('p');
+    if (slugParam) {
+        const product = productsData.find(p => p.slug === slugParam);
+        if (product) {
+            // Pequeño delay para que el grid termine de pintar antes del modal
+            setTimeout(() => openProductModal(product.id), 80);
+        }
+    }
 }
 
 // Reset checkout button to default state
