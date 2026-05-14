@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{NAME}} — Legado San José</title>
+    <meta name="description" content="{{DESCRIPTION_SHORT}}">
+    <meta property="og:type" content="product">
+    <meta property="og:title" content="{{NAME}} — Legado San José">
+    <meta property="og:description" content="{{DESCRIPTION_SHORT}}">
+    <meta property="og:image" content="{{IMAGE_ABS}}">
+    <meta property="og:url" content="{{PAGE_URL}}">
+    <meta property="og:locale" content="es_MX">
+    <meta property="product:price:amount" content="{{PRICE}}">
+    <meta property="product:price:currency" content="MXN">
+    <link rel="canonical" href="{{PAGE_URL}}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{NAME}} — Legado San José">
+    <meta name="twitter:description" content="{{DESCRIPTION_SHORT}}">
+    <meta name="twitter:image" content="{{IMAGE_ABS}}">
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JT5P73Z3EV"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-JT5P73Z3EV');
+    </script>
+
+    <link rel="preload" href="/Fonts/Rawgly.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/Fonts/Montserrat-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preconnect" href="https://eeylocshlsspbbkmmhov.supabase.co" crossorigin>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/productos.css">
+    <style>
+        .pdp {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .pdp { grid-template-columns: 1fr; gap: 30px; margin: 20px auto; }
+        }
+        .pdp-gallery .pdp-main-image {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #f5f5f5;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pdp-gallery .pdp-main-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .pdp-thumbs {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .pdp-thumbs .pdp-thumb {
+            width: 70px;
+            height: 70px;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            background: #f5f5f5;
+        }
+        .pdp-thumbs .pdp-thumb.active { border-color: var(--orange-primary, #F5A84F); }
+        .pdp-thumbs .pdp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .pdp-info h1 { margin: 0 0 8px; font-size: 32px; }
+        .pdp-info .pdp-price { font-size: 24px; color: var(--orange-primary, #F5A84F); margin: 0 0 20px; font-weight: 600; }
+        .pdp-info .pdp-description { color: var(--gray-mid, #666); line-height: 1.6; margin-bottom: 24px; }
+        .pdp-share {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 16px;
+            padding: 8px 14px;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--gray-mid, #555);
+        }
+        .pdp-share:hover { border-color: var(--orange-primary, #F5A84F); color: var(--orange-primary, #F5A84F); }
+        .pdp-share-msg { display: inline-block; margin-left: 10px; color: #4caf50; font-size: 13px; opacity: 0; transition: opacity .3s; }
+        .pdp-share-msg.show { opacity: 1; }
+        .pdp-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 20px auto 0;
+            max-width: 1200px;
+            padding: 0 20px;
+            color: var(--gray-mid, #666);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .pdp-back:hover { color: var(--orange-primary, #F5A84F); }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/">
+                    <h1>LEGADO SAN JOSÉ</h1>
+                </a>
+            </div>
+
+            <div class="menu-toggle" id="mobile-menu-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <ul class="nav-menu">
+                <li><a href="/">Inicio</a></li>
+                <li><a href="/productos" class="active">Productos</a></li>
+                <li><a href="/#nosotros">Nosotros</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+
+            <div class="nav-cart" id="cart-toggle">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span class="cart-count" id="cart-count">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+
+    <a href="/productos" class="pdp-back">← Volver a la tienda</a>
+
+    <!-- Product Detail -->
+    <main class="pdp">
+        <div class="pdp-gallery">
+            <div class="pdp-main-image" id="pdp-main">
+                <img id="pdp-main-img" src="{{IMAGE_ABS}}" alt="{{NAME}}">
+            </div>
+            <div class="pdp-thumbs" id="pdp-thumbs"></div>
+        </div>
+
+        <div class="pdp-info">
+            <h1>{{NAME}}</h1>
+            <p class="pdp-price">${{PRICE_FMT}} MXN</p>
+            <p class="pdp-description">{{DESCRIPTION}}</p>
+
+            <div class="product-options">
+                <div class="option-group" id="variant-group" style="display: none;">
+                    <label>Color:</label>
+                    <div class="variant-options" id="variant-options"></div>
+                </div>
+
+                <div class="option-group" id="size-group" style="display: none;">
+                    <label>Talla:</label>
+                    <div class="size-buttons" id="size-buttons"></div>
+                </div>
+
+                <div class="option-group">
+                    <div class="modal-actions">
+                        <div class="quantity-selector">
+                            <button class="qty-btn minus" id="qty-minus">-</button>
+                            <input type="number" id="quantity" value="1" min="1">
+                            <button class="qty-btn plus" id="qty-plus">+</button>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="add-to-cart-btn" id="add-to-cart-btn">
+                                Agregar al Carrito
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button class="pdp-share" id="pdp-share-btn" type="button">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                        Copiar link
+                    </button>
+                    <span class="pdp-share-msg" id="pdp-share-msg">¡Link copiado!</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer (igual que productos.html) -->
+    <footer class="footer" id="contacto">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h3>LEGADO SAN JOSÉ</h3>
+                    <p id="footer-tagline">Tradición que se viste</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Compra</h4>
+                    <ul>
+                        <li><a href="/productos">Productos</a></li>
+                        <li><a href="/#contacto">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Información</h4>
+                    <ul id="footer-pages-links"></ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="footer-year"></span> Legado San José. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Datos del producto inyectados por el server -->
+    <script type="application/json" id="product-data">{{PRODUCT_JSON}}</script>
+
+    <script src="/content-loader.js"></script>
+    <script src="/producto.js"></script>
+</body>
+
+</html>

@@ -21,6 +21,7 @@ router.get('/products', async (req, res) => {
         // Transform data to match existing frontend format
         const products = data.map(p => ({
             id: p.id,
+            slug: p.slug,
             name: p.name,
             price: p.price,
             category: p.category,
@@ -42,6 +43,42 @@ router.get('/products', async (req, res) => {
     }
 });
 
+// Helper: shape de producto para el frontend
+function shapeProduct(p) {
+    return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        price: p.price,
+        category: p.category,
+        description: p.description,
+        image: p.image_url,
+        images: p.images || [],
+        gradient: p.gradient,
+        sizes: p.sizes || [],
+        variants: p.variants || [],
+        stock: p.stock
+    };
+}
+
+// GET /api/products/by-slug/:slug - Get single product by slug (public)
+router.get('/products/by-slug/:slug', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('slug', req.params.slug)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !data) return res.status(404).json({ error: 'Product not found' });
+        res.json(shapeProduct(data));
+    } catch (error) {
+        console.error('Get product by slug error:', error);
+        res.status(500).json({ error: 'Failed to fetch product' });
+    }
+});
+
 // GET /api/products/:id - Get single product (public)
 router.get('/products/:id', async (req, res) => {
     try {
@@ -55,21 +92,7 @@ router.get('/products/:id', async (req, res) => {
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'Product not found' });
 
-        // Transform to match frontend format
-        const product = {
-            id: data.id,
-            name: data.name,
-            price: data.price,
-            category: data.category,
-            description: data.description,
-            image: data.image_url,
-            images: data.images || [],
-            gradient: data.gradient,
-            sizes: data.sizes || [],
-            variants: data.variants || []
-        };
-
-        res.json(product);
+        res.json(shapeProduct(data));
 
     } catch (error) {
         console.error('Get product error:', error);

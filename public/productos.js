@@ -198,6 +198,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     resetCheckoutButton(); // Reset button on page load
 
+    // Si el usuario llega con #cart (ej. desde /producto/<slug>), abre el sidebar
+    if (window.location.hash === '#cart') {
+        setTimeout(() => openCart(), 100);
+    }
+
     // Escuchar mensaje de limpieza de carrito desde la página de éxito
     window.addEventListener('message', (event) => {
         if (event.data.type === 'CLEAR_CART') {
@@ -344,6 +349,31 @@ function setupEventListeners() {
     if (checkoutBtn) {
         checkoutBtn.addEventListener('click', proceedToCheckout);
     }
+
+    // Compartir link del producto desde el modal
+    const shareBtn = document.getElementById('modal-share-btn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', async () => {
+            const slug = document.getElementById('product-modal').dataset.productSlug;
+            if (!slug) return;
+            const url = `${window.location.origin}/producto/${encodeURIComponent(slug)}`;
+            const product = productsData.find(p => String(p.id) === String(document.getElementById('product-modal').dataset.productId));
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: product?.name || 'Producto', url });
+                } else {
+                    await navigator.clipboard.writeText(url);
+                    const msg = document.getElementById('modal-share-msg');
+                    if (msg) {
+                        msg.classList.add('show');
+                        setTimeout(() => msg.classList.remove('show'), 2000);
+                    }
+                }
+            } catch (e) {
+                console.warn('Share cancelado/fallido', e);
+            }
+        });
+    }
 }
 
 // Open Product Modal
@@ -424,6 +454,13 @@ function openProductModal(productId) {
 
     // Reset quantity
     document.getElementById('quantity').value = 1;
+
+    // Boton "copiar link" — guarda el slug en el modal y resetea el mensaje
+    modal.dataset.productSlug = product.slug || '';
+    const shareMsg = document.getElementById('modal-share-msg');
+    if (shareMsg) shareMsg.classList.remove('show');
+    const shareBtn = document.getElementById('modal-share-btn');
+    if (shareBtn) shareBtn.style.display = product.slug ? 'inline-flex' : 'none';
 
     // Show modal
     modal.classList.add('active');

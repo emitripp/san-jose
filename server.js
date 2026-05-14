@@ -121,6 +121,78 @@ app.get('/productos/:slug', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'productos.html'));
 });
 
+// Helpers para producto.html (server-rendered)
+const escapeHtml = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const stripHtml = (s) => String(s == null ? '' : s).replace(/<[^>]*>/g, '');
+const truncate = (s, n) => (s.length <= n ? s : s.slice(0, n - 1) + '…');
+
+// Cache del template (se lee una vez al arrancar)
+let productoTemplate = null;
+function getProductoTemplate() {
+    if (!productoTemplate) {
+        productoTemplate = fs.readFileSync(path.join(__dirname, 'templates', 'producto.html'), 'utf8');
+    }
+    return productoTemplate;
+}
+
+// Ruta dedicada por producto: /producto/<slug>
+app.get('/producto/:slug', async (req, res) => {
+    try {
+        const { data: p, error } = await supabaseAdmin
+            .from('products')
+            .select('*')
+            .eq('slug', req.params.slug)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !p) {
+            return res.status(404).sendFile(path.join(__dirname, 'public', 'productos.html'));
+        }
+
+        const baseUrl = (process.env.BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+        const imageAbs = p.image_url
+            ? (p.image_url.startsWith('http') ? p.image_url : `${baseUrl}/${p.image_url.replace(/^\//, '')}`)
+            : `${baseUrl}/Fotos/optimized/bolsas.png`;
+        const pageUrl = `${baseUrl}/producto/${encodeURIComponent(p.slug)}`;
+        const descPlain = stripHtml(p.description || '');
+        const descShort = truncate(descPlain || `Compra ${p.name} — Legado San José`, 160);
+        const priceFmt = Number(p.price).toLocaleString('es-MX');
+
+        const productJson = JSON.stringify({
+            id: p.id,
+            slug: p.slug,
+            name: p.name,
+            price: p.price,
+            category: p.category,
+            description: p.description,
+            image: p.image_url,
+            images: p.images || [],
+            gradient: p.gradient,
+            sizes: p.sizes || [],
+            variants: p.variants || [],
+            stock: p.stock
+        }).replace(/<\//g, '<\\/'); // evita romper el </script> contenedor
+
+        const html = getProductoTemplate()
+            .replace(/\{\{NAME\}\}/g, escapeHtml(p.name))
+            .replace(/\{\{DESCRIPTION_SHORT\}\}/g, escapeHtml(descShort))
+            .replace(/\{\{DESCRIPTION\}\}/g, escapeHtml(descPlain))
+            .replace(/\{\{IMAGE_ABS\}\}/g, escapeHtml(imageAbs))
+            .replace(/\{\{PAGE_URL\}\}/g, escapeHtml(pageUrl))
+            .replace(/\{\{PRICE\}\}/g, String(p.price))
+            .replace(/\{\{PRICE_FMT\}\}/g, priceFmt)
+            .replace(/\{\{PRODUCT_JSON\}\}/g, productJson);
+
+        res.set('Cache-Control', 'no-store');
+        res.send(html);
+    } catch (err) {
+        console.error('Error rendering /producto/:slug', err);
+        res.status(500).sendFile(path.join(__dirname, 'public', 'productos.html'));
+    }
+});
+
 // Main Static delivery — extensions: ['html'] permite servir productos.html cuando piden /productos
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '7d', extensions: ['html'] }));
 app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { maxAge: '7d', extensions: ['html'] }));

@@ -20,6 +20,30 @@ const upload = multer({
 // - corrige el latin1 que mete multer (ej. "JosÃ©" -> "José")
 // - quita acentos y diacríticos
 // - reemplaza cualquier carácter fuera de [a-zA-Z0-9._-] por "_"
+// Slug a partir de un nombre (igual algoritmo que la funcion slugify de Postgres).
+function makeSlug(name) {
+    return (name || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+// Genera un slug unico para products. Si el base ya existe, agrega -2, -3, ...
+async function generateUniqueProductSlug(name, ignoreId = null) {
+    const base = makeSlug(name) || 'producto';
+    let candidate = base;
+    let counter = 2;
+    while (true) {
+        let q = supabaseAdmin.from('products').select('id').eq('slug', candidate).limit(1);
+        if (ignoreId) q = q.neq('id', ignoreId);
+        const { data } = await q;
+        if (!data || data.length === 0) return candidate;
+        candidate = `${base}-${counter}`;
+        counter++;
+    }
+}
+
 function sanitizeFileName(originalName) {
     const fixed = Buffer.from(originalName, 'latin1').toString('utf8');
     return fixed
@@ -238,9 +262,11 @@ router.post('/products', verifyAdmin, async (req, res) => {
             .single();
 
         const newOrder = (maxOrder?.display_order || 0) + 1;
+        const slug = await generateUniqueProductSlug(name);
 
         const productData = {
                 name,
+                slug,
                 price: parseInt(price),
                 category,
                 description: description || '',
@@ -272,7 +298,7 @@ router.post('/products', verifyAdmin, async (req, res) => {
 // PUT /api/admin/products/:id - Update product
 router.put('/products/:id', verifyAdmin, async (req, res) => {
     try {
-        const { name, price, category, description, image_url, images, gradient, sizes, variants, is_active, display_order, stock } = req.body;
+        const { name, slug, price, category, description, image_url, images, gradient, sizes, variants, is_active, display_order, stock } = req.body;
 
         const updateData = {};
         if (name !== undefined) updateData.name = name;
@@ -287,6 +313,12 @@ router.put('/products/:id', verifyAdmin, async (req, res) => {
         if (is_active !== undefined) updateData.is_active = is_active;
         if (display_order !== undefined) updateData.display_order = display_order;
         if (stock !== undefined) updateData.stock = parseInt(stock);
+        // Slug: si lo pasan explicito, lo normalizamos y validamos unicidad.
+        // Por defecto el slug se mantiene estable (no se regenera al renombrar)
+        // para no romper links compartidos previamente.
+        if (slug !== undefined && slug !== null) {
+            updateData.slug = await generateUniqueProductSlug(slug, req.params.id);
+        }
 
         const { data, error } = await supabaseAdmin
             .from('products')
