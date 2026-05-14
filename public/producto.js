@@ -214,25 +214,38 @@ function setupCartIcon() {
     });
 }
 
+async function copyToClipboard(text) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (e) {
+        console.warn('clipboard API fallo, usando fallback', e);
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { console.warn('execCommand copy fallo', e); }
+    document.body.removeChild(ta);
+    return true;
+}
+
 function setupShareButton() {
     const btn = document.getElementById('pdp-share-btn');
-    const msg = document.getElementById('pdp-share-msg');
     if (!btn) return;
     btn.addEventListener('click', async () => {
-        const url = window.location.href;
-        try {
-            if (navigator.share) {
-                await navigator.share({ title: product.name, url });
-            } else {
-                await navigator.clipboard.writeText(url);
-                if (msg) {
-                    msg.classList.add('show');
-                    setTimeout(() => msg.classList.remove('show'), 2000);
-                }
-            }
-        } catch (e) {
-            console.warn('Share cancelado/fallido', e);
-        }
+        await copyToClipboard(window.location.href);
+        btn.classList.add('copied');
+        const label = btn.querySelector('.share-label');
+        if (label) label.textContent = 'Link copiado';
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            if (label) label.textContent = 'Copiar link';
+        }, 1800);
     });
 }
 

@@ -1566,33 +1566,26 @@
     transform: translateY(-3px);
     box-shadow: 0 6px 16px rgba(245, 168, 79, 0.3);
 }
-/* Botón compartir en modal de producto */
+/* Botón compartir/copiar link en modal de producto */
 .modal-share-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
-    border: 1px solid #ddd;
-    border-radius: 999px;
-    background: #fff;
+    padding: 6px 0;
+    border: none;
+    background: transparent;
     cursor: pointer;
-    font-size: 14px;
-    color: var(--gray-mid, #555);
-    margin-top: 4px;
-    transition: border-color .2s, color .2s;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-mid, #888);
+    margin-top: 8px;
+    transition: color .15s;
+    letter-spacing: .02em;
 }
 .modal-share-btn:hover {
-    border-color: var(--primary, #F5A84F);
     color: var(--primary, #F5A84F);
 }
-.modal-share-msg {
-    display: inline-block;
-    margin-left: 10px;
-    color: #4caf50;
-    font-size: 13px;
-    opacity: 0;
-    transition: opacity .3s;
-}
-.modal-share-msg.show {
-    opacity: 1;
-}
+.modal-share-btn .share-icon-check { display: none; }
+.modal-share-btn.copied { color: #4caf50; cursor: default; }
+.modal-share-btn.copied .share-icon { display: none; }
+.modal-share-btn.copied .share-icon-check { display: inline-block; }

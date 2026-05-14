@@ -350,30 +350,45 @@ function setupEventListeners() {
         checkoutBtn.addEventListener('click', proceedToCheckout);
     }
 
-    // Compartir link del producto desde el modal
+    // Copiar link del producto desde el modal
     const shareBtn = document.getElementById('modal-share-btn');
     if (shareBtn) {
         shareBtn.addEventListener('click', async () => {
             const slug = document.getElementById('product-modal').dataset.productSlug;
             if (!slug) return;
             const url = `${window.location.origin}/producto/${encodeURIComponent(slug)}`;
-            const product = productsData.find(p => String(p.id) === String(document.getElementById('product-modal').dataset.productId));
-            try {
-                if (navigator.share) {
-                    await navigator.share({ title: product?.name || 'Producto', url });
-                } else {
-                    await navigator.clipboard.writeText(url);
-                    const msg = document.getElementById('modal-share-msg');
-                    if (msg) {
-                        msg.classList.add('show');
-                        setTimeout(() => msg.classList.remove('show'), 2000);
-                    }
-                }
-            } catch (e) {
-                console.warn('Share cancelado/fallido', e);
-            }
+            await copyToClipboard(url);
+            shareBtn.classList.add('copied');
+            const label = shareBtn.querySelector('.share-label');
+            if (label) label.textContent = 'Link copiado';
+            setTimeout(() => {
+                shareBtn.classList.remove('copied');
+                if (label) label.textContent = 'Copiar link';
+            }, 1800);
         });
     }
+}
+
+// Helper de copy con fallback (clipboard API requiere contexto seguro)
+async function copyToClipboard(text) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (e) {
+        console.warn('clipboard API fallo, usando fallback', e);
+    }
+    // Fallback con textarea + execCommand
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { console.warn('execCommand copy fallo', e); }
+    document.body.removeChild(ta);
+    return true;
 }
 
 // Open Product Modal
