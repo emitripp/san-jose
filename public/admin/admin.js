@@ -294,9 +294,9 @@ function showDashboard(admin) {
     const savedSection = localStorage.getItem('admin_active_section') || 'products';
     switchSection(savedSection);
 
-    // Load initial data
-    loadCategories(); // Load categories first for product form
-    loadProducts();
+    // Load initial data — await categorias antes de productos para que
+    // renderProducts agrupe con los nombres reales (no slugs)
+    loadCategories().then(loadProducts);
     loadOrders();
     loadGallery();
     loadContent();
@@ -397,18 +397,21 @@ function renderProducts() {
         return;
     }
 
-    // Group products by category
-    const categories = {
-        gorras: { name: 'Gorras', products: [] },
-        playeras: { name: 'Playeras', products: [] },
-        mochilas: { name: 'Mochilas', products: [] },
-        maletas: { name: 'Maletas', products: [] }
-    };
+    // Group products by category. Use currentCategories (dinamicas) si ya cargaron,
+    // si no, construir buckets desde los propios productos para no esconder nada.
+    const categories = {};
+    if (currentCategories && currentCategories.length > 0) {
+        currentCategories.forEach(cat => {
+            categories[cat.slug] = { name: cat.name, products: [] };
+        });
+    }
 
     currentProducts.forEach(product => {
-        if (categories[product.category]) {
-            categories[product.category].products.push(product);
+        const key = product.category || 'sin-categoria';
+        if (!categories[key]) {
+            categories[key] = { name: key, products: [] };
         }
+        categories[key].products.push(product);
     });
 
     // Helper to fix image path (relative paths need to go up from /admin/)
