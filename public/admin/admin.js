@@ -204,6 +204,8 @@ function setupEventListeners() {
     // Image upload handlers
     document.getElementById('main-image-input').addEventListener('change', handleMainImageUpload);
     document.getElementById('gallery-image-input').addEventListener('change', handleGalleryImageUpload);
+    const mainImageRemove = document.getElementById('main-image-remove');
+    if (mainImageRemove) mainImageRemove.addEventListener('click', clearMainImage);
 
     // Maintenance toggle
     const maintenanceToggle = document.getElementById('maintenance-toggle');
@@ -585,8 +587,10 @@ function openProductModal(product = null) {
     form.reset();
     document.getElementById('product-id').value = '';
     document.getElementById('product-image-url').value = '';
-    document.getElementById('main-image-preview').style.display = 'none';
-    document.querySelector('#main-image-upload .upload-placeholder').style.display = 'block';
+    document.getElementById('main-image-preview-wrapper').style.display = 'none';
+    document.getElementById('main-image-preview').src = '';
+    document.querySelector('#main-image-upload .upload-placeholder').style.display = 'flex';
+    document.getElementById('main-image-input').value = '';
     document.getElementById('additional-images').innerHTML = '';
     document.getElementById('variants-container').innerHTML = '';
     document.getElementById('product-stock').value = '';
@@ -605,10 +609,7 @@ function openProductModal(product = null) {
 
         // Show main image
         if (product.image_url) {
-            const preview = document.getElementById('main-image-preview');
-            preview.src = product.image_url;
-            preview.style.display = 'block';
-            document.querySelector('#main-image-upload .upload-placeholder').style.display = 'none';
+            showMainImagePreview(product.image_url);
         }
 
         // Load additional images
@@ -743,6 +744,22 @@ async function deleteProduct(id) {
 // IMAGE UPLOAD
 // ============================================
 
+function showMainImagePreview(url) {
+    const preview = document.getElementById('main-image-preview');
+    const wrapper = document.getElementById('main-image-preview-wrapper');
+    preview.src = url;
+    wrapper.style.display = 'block';
+    document.querySelector('#main-image-upload .upload-placeholder').style.display = 'none';
+}
+
+function clearMainImage() {
+    document.getElementById('product-image-url').value = '';
+    document.getElementById('main-image-preview').src = '';
+    document.getElementById('main-image-preview-wrapper').style.display = 'none';
+    document.querySelector('#main-image-upload .upload-placeholder').style.display = 'flex';
+    document.getElementById('main-image-input').value = '';
+}
+
 async function handleMainImageUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -764,10 +781,7 @@ async function handleMainImageUpload(e) {
         const data = await response.json();
 
         // Update preview
-        const preview = document.getElementById('main-image-preview');
-        preview.src = data.url;
-        preview.style.display = 'block';
-        document.querySelector('#main-image-upload .upload-placeholder').style.display = 'none';
+        showMainImagePreview(data.url);
 
         // Store URL
         document.getElementById('product-image-url').value = data.url;

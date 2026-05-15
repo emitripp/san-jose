@@ -15,7 +15,7 @@
         gtag('config', 'G-JT5P73Z3EV');
     </script>
 
-    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="admin.css?v=2">
 </head>
 
 <body>
@@ -286,7 +286,13 @@
                                 <span>📷</span>
                                 <p>Click para subir imagen</p>
                             </div>
-                            <img id="main-image-preview" class="image-preview" style="display: none;">
+                            <div class="image-preview-wrapper" id="main-image-preview-wrapper" style="display: none;">
+                                <img id="main-image-preview" class="image-preview"
+                                    onclick="document.getElementById('main-image-input').click()"
+                                    title="Click para reemplazar">
+                                <button type="button" class="image-preview-remove" id="main-image-remove"
+                                    title="Eliminar imagen">×</button>
+                            </div>
                         </div>
                         <input type="hidden" id="product-image-url">
                     </div>
@@ -565,7 +571,7 @@
     <!-- Toast Notifications -->
     <div id="toast-container"></div>
 
-    <script src="admin.js"></script>
+    <script src="admin.js?v=2"></script>
 </body>
 
 </html>
