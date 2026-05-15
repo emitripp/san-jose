@@ -587,10 +587,7 @@ function openProductModal(product = null) {
     form.reset();
     document.getElementById('product-id').value = '';
     document.getElementById('product-image-url').value = '';
-    document.getElementById('main-image-preview-wrapper').style.display = 'none';
-    document.getElementById('main-image-preview').src = '';
-    document.querySelector('#main-image-upload .upload-placeholder').style.display = 'flex';
-    document.getElementById('main-image-input').value = '';
+    clearMainImage();
     document.getElementById('additional-images').innerHTML = '';
     document.getElementById('variants-container').innerHTML = '';
     document.getElementById('product-stock').value = '';
@@ -747,17 +744,28 @@ async function deleteProduct(id) {
 function showMainImagePreview(url) {
     const preview = document.getElementById('main-image-preview');
     const wrapper = document.getElementById('main-image-preview-wrapper');
-    preview.src = url;
-    wrapper.style.display = 'block';
-    document.querySelector('#main-image-upload .upload-placeholder').style.display = 'none';
+    const placeholder = document.querySelector('#main-image-upload .upload-placeholder');
+    if (preview) {
+        preview.src = url;
+        preview.style.display = 'block';
+    }
+    if (wrapper) wrapper.style.display = 'inline-block';
+    if (placeholder) placeholder.style.display = 'none';
 }
 
 function clearMainImage() {
+    const preview = document.getElementById('main-image-preview');
+    const wrapper = document.getElementById('main-image-preview-wrapper');
+    const placeholder = document.querySelector('#main-image-upload .upload-placeholder');
+    const input = document.getElementById('main-image-input');
     document.getElementById('product-image-url').value = '';
-    document.getElementById('main-image-preview').src = '';
-    document.getElementById('main-image-preview-wrapper').style.display = 'none';
-    document.querySelector('#main-image-upload .upload-placeholder').style.display = 'flex';
-    document.getElementById('main-image-input').value = '';
+    if (preview) {
+        preview.src = '';
+        preview.style.display = 'none';
+    }
+    if (wrapper) wrapper.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'flex';
+    if (input) input.value = '';
 }
 
 async function handleMainImageUpload(e) {
