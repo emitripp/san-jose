@@ -54,6 +54,58 @@ function getVariantSizeStock(product, variantName, size) {
     return sizeStock !== undefined ? sizeStock : null;
 }
 
+// Returns max units the user can still add for this (product, variant, size) combo.
+// null = unlimited. 0 = sin stock disponible (ya agotado o todo lo disponible esta en el carrito).
+function getRemainingStockForCombo(product, variantName, size) {
+    if (!product) return null;
+
+    const hasVariantStock = product.variants && product.variants.some(v => v.stock);
+    let absoluteStock = null;
+
+    if (hasVariantStock && variantName) {
+        absoluteStock = getVariantSizeStock(product, variantName, size);
+    } else if (product.stock !== null && product.stock !== undefined) {
+        absoluteStock = product.stock;
+    }
+
+    if (absoluteStock === null || absoluteStock === undefined) return null;
+
+    // Restar lo que ya esta en el carrito para esta combinacion
+    let inCart = 0;
+    if (hasVariantStock && variantName) {
+        inCart = cart
+            .filter(item => String(item.id) === String(product.id) && item.size === size && item.variant === variantName)
+            .reduce((sum, item) => sum + item.quantity, 0);
+    } else {
+        // Producto sin variantes: contar todas las unidades en carrito de este producto
+        inCart = cart
+            .filter(item => String(item.id) === String(product.id))
+            .reduce((sum, item) => sum + item.quantity, 0);
+    }
+
+    return Math.max(0, absoluteStock - inCart);
+}
+
+// Toast ligero para feedback de stock en el carrito
+function showCartToast(message, type = '') {
+    let toast = document.getElementById('cart-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'cart-toast';
+        toast.className = 'cart-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = 'cart-toast' + (type ? ' ' + type : '');
+    // Reflow para reiniciar animacion
+    void toast.offsetWidth;
+    toast.classList.add('show');
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2400);
+}
+
 // Cart & History Management
 function openCart() {
     const sidebar = document.getElementById('cart-sidebar');
@@ -338,7 +390,19 @@ function setupEventListeners() {
     if (qtyPlus) {
         qtyPlus.addEventListener('click', () => {
             const input = document.getElementById('quantity');
-            input.value = Math.min(10, parseInt(input.value) + 1);
+            const maxAttr = input.getAttribute('max');
+            const hardCap = maxAttr ? parseInt(maxAttr) : 10;
+            const next = (parseInt(input.value) || 1) + 1;
+            if (next > hardCap) {
+                // Feedback inline si intenta excederse del stock disponible
+                if (maxAttr) {
+                    showCartToast(`Sólo hay ${hardCap} pieza${hardCap === 1 ? '' : 's'} disponible${hardCap === 1 ? '' : 's'}`, 'warning');
+                }
+                input.value = hardCap;
+            } else {
+                input.value = next;
+            }
+            updateModalStockUI();
         });
     }
 
@@ -346,8 +410,16 @@ function setupEventListeners() {
     if (qtyMinus) {
         qtyMinus.addEventListener('click', () => {
             const input = document.getElementById('quantity');
-            input.value = Math.max(1, parseInt(input.value) - 1);
+            input.value = Math.max(1, (parseInt(input.value) || 1) - 1);
+            updateModalStockUI();
         });
+    }
+
+    // Si el usuario tipea manualmente la cantidad, recalcular limites
+    const qtyInputEl = document.getElementById('quantity');
+    if (qtyInputEl) {
+        qtyInputEl.addEventListener('input', updateModalStockUI);
+        qtyInputEl.addEventListener('change', updateModalStockUI);
     }
 
     // Add to cart from modal
@@ -493,6 +565,9 @@ function openProductModal(productId) {
     modal.classList.add('active');
     document.body.classList.add('no-scroll');
 
+    // Refrescar estado de stock (mensaje, max qty, boton)
+    updateModalStockUI();
+
     // Google Analytics: Track product view
     if (typeof gtag !== 'undefined') {
         gtag('event', 'view_item', {
@@ -555,8 +630,120 @@ function updateSizeButtons(product, selectedVariantName) {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            updateModalStockUI();
         });
     });
+}
+
+// Refresca el mensaje de stock, el max del input qty y el estado del boton "Agregar al carrito".
+function updateModalStockUI() {
+    const modal = document.getElementById('product-modal');
+    if (!modal || !modal.classList.contains('active')) return;
+
+    const productId = modal.dataset.productId;
+    const product = productsData.find(p => String(p.id) === String(productId));
+    if (!product) return;
+
+    const statusEl = document.getElementById('modal-stock-status');
+    const addBtn = document.getElementById('add-to-cart-btn');
+    const qtyInput = document.getElementById('quantity');
+    const qtyPlus = document.getElementById('qty-plus');
+    const qtyMinus = document.getElementById('qty-minus');
+
+    // Variante seleccionada
+    const activeVariantBtn = document.querySelector('.variant-btn.active');
+    const variantName = activeVariantBtn ? activeVariantBtn.dataset.variant : null;
+
+    // Talla seleccionada (o 'Única' si no hay tallas)
+    const activeSizeBtn = document.querySelector('.size-btn.active');
+    const hasSizes = product.sizes && product.sizes.length > 0;
+    const size = hasSizes ? (activeSizeBtn ? activeSizeBtn.dataset.size : null) : 'Única';
+
+    const resetActions = (msg = '', type = '') => {
+        if (statusEl) {
+            if (msg) {
+                statusEl.textContent = msg;
+                statusEl.className = 'modal-stock-status ' + type;
+                statusEl.style.display = 'block';
+            } else {
+                statusEl.style.display = 'none';
+                statusEl.textContent = '';
+            }
+        }
+    };
+
+    // Si necesita talla y no se ha seleccionado: no mostrar mensaje, dejar boton activo
+    if (hasSizes && !size) {
+        resetActions('');
+        if (addBtn) {
+            addBtn.disabled = false;
+            addBtn.textContent = 'Agregar al Carrito';
+        }
+        if (qtyInput) qtyInput.removeAttribute('max');
+        if (qtyPlus) qtyPlus.disabled = false;
+        if (qtyMinus) qtyMinus.disabled = false;
+        return;
+    }
+
+    const remaining = getRemainingStockForCombo(product, variantName, size);
+
+    // Stock ilimitado
+    if (remaining === null) {
+        resetActions('');
+        if (addBtn) {
+            addBtn.disabled = false;
+            addBtn.textContent = 'Agregar al Carrito';
+        }
+        if (qtyInput) qtyInput.removeAttribute('max');
+        if (qtyPlus) qtyPlus.disabled = false;
+        if (qtyMinus) qtyMinus.disabled = false;
+        return;
+    }
+
+    // Sin stock disponible
+    if (remaining <= 0) {
+        // Distinguir entre "agotado en bodega" y "ya tienes todo en carrito"
+        const absoluteCheck = (product.variants && product.variants.some(v => v.stock) && variantName)
+            ? getVariantSizeStock(product, variantName, size)
+            : product.stock;
+        const fullyOut = absoluteCheck === 0;
+        const msg = fullyOut
+            ? 'Agotado'
+            : 'Ya tienes todas las piezas disponibles en tu carrito';
+        resetActions(msg, 'danger');
+        if (addBtn) {
+            addBtn.disabled = true;
+            addBtn.textContent = fullyOut ? 'Agotado' : 'Sin stock disponible';
+        }
+        if (qtyInput) {
+            qtyInput.value = 1;
+            qtyInput.setAttribute('max', '1');
+        }
+        if (qtyPlus) qtyPlus.disabled = true;
+        if (qtyMinus) qtyMinus.disabled = true;
+        return;
+    }
+
+    // Hay stock: clamp qty y mostrar info
+    if (qtyInput) {
+        qtyInput.setAttribute('max', String(remaining));
+        let qty = parseInt(qtyInput.value);
+        if (isNaN(qty) || qty < 1) qty = 1;
+        if (qty > remaining) qty = remaining;
+        qtyInput.value = qty;
+    }
+    if (qtyPlus) qtyPlus.disabled = false;
+    if (qtyMinus) qtyMinus.disabled = false;
+    if (addBtn) {
+        addBtn.disabled = false;
+        addBtn.textContent = 'Agregar al Carrito';
+    }
+
+    if (remaining <= 3) {
+        resetActions(`¡Sólo quedan ${remaining} pieza${remaining === 1 ? '' : 's'}!`, 'warning');
+    } else {
+        resetActions('');
+    }
 }
 
 // Helper: Select Variant
@@ -596,6 +783,9 @@ function selectVariant(btn) {
 
     // 5. Update size buttons stock for this variant
     updateSizeButtons(product, variantName);
+
+    // 6. Refrescar estado de stock (mensaje + boton + qty max)
+    updateModalStockUI();
 }
 
 // Close Product Modal
@@ -627,7 +817,12 @@ function addToCartFromModal() {
         let size = null;
         if (product.sizes.length > 0) {
             if (!selectedSizeBtn) {
-                alert('Por favor selecciona una talla');
+                const statusEl = document.getElementById('modal-stock-status');
+                if (statusEl) {
+                    statusEl.textContent = 'Por favor selecciona una talla';
+                    statusEl.className = 'modal-stock-status warning';
+                    statusEl.style.display = 'block';
+                }
                 return;
             }
             size = selectedSizeBtn.dataset.size;
@@ -660,16 +855,20 @@ function addToCartFromModal() {
         const quantityInput = document.getElementById('quantity');
         const quantity = parseInt(quantityInput.value) || 1;
 
-        // Validate stock before adding
-        const available = getVariantSizeStock(product, variant, size);
-        if (available !== null) {
-            const existingQty = cart
-                .filter(item => String(item.id) === String(productId) && item.size === size && item.variant === variant)
-                .reduce((sum, item) => sum + item.quantity, 0);
-            if (existingQty + quantity > available) {
-                alert(`Solo hay ${available} pieza(s) disponible(s) de ${variant} talla ${size}. Ya tienes ${existingQty} en el carrito.`);
-                return;
+        // Validar stock antes de agregar (considera tanto variante/talla como producto general)
+        const remaining = getRemainingStockForCombo(product, variant, size);
+        if (remaining !== null && quantity > remaining) {
+            const statusEl = document.getElementById('modal-stock-status');
+            const msg = remaining === 0
+                ? 'No hay piezas disponibles para esta selección.'
+                : `Sólo puedes agregar ${remaining} pieza${remaining === 1 ? '' : 's'} más al carrito.`;
+            if (statusEl) {
+                statusEl.textContent = msg;
+                statusEl.className = 'modal-stock-status danger';
+                statusEl.style.display = 'block';
             }
+            updateModalStockUI();
+            return;
         }
 
         // Check if item already in cart (match ID, Size, AND Variant)
@@ -812,7 +1011,7 @@ function updateCartItem(index, change) {
         if (product) {
             const available = getVariantSizeStock(product, item.variant, item.size);
             if (available !== null && item.quantity + change > available) {
-                alert(`Solo quedan ${available} pieza(s) de ${item.variant ? item.variant + ' ' : ''}talla ${item.size}`);
+                showCartToast(`Sólo quedan ${available} pieza${available === 1 ? '' : 's'} de ${item.variant ? item.variant + ' ' : ''}talla ${item.size}`, 'warning');
                 return;
             }
             // Also check product-level stock for non-variant products
@@ -821,7 +1020,7 @@ function updateCartItem(index, change) {
                     .filter(c => String(c.id) === String(item.id))
                     .reduce((sum, c) => sum + c.quantity, 0);
                 if (totalInCart + change > product.stock) {
-                    alert(`Solo quedan ${product.stock} pieza(s) de ${item.name}`);
+                    showCartToast(`Sólo quedan ${product.stock} pieza${product.stock === 1 ? '' : 's'} de ${item.name}`, 'warning');
                     return;
                 }
             }

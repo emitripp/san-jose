@@ -865,6 +865,71 @@
     color: #f39c12;
 }
 
+/* Stock status message in modal */
+.modal-stock-status {
+    margin: 10px 0 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.modal-stock-status.info {
+    background: #eef7ff;
+    color: #2c6db5;
+    border: 1px solid #cfe4f8;
+}
+
+.modal-stock-status.warning {
+    background: #fff8e6;
+    color: #a87807;
+    border: 1px solid #f5e2a0;
+}
+
+.modal-stock-status.danger {
+    background: #fdecea;
+    color: #b3261e;
+    border: 1px solid #f5c6c1;
+}
+
+.add-to-cart-btn:disabled,
+.add-to-cart-btn.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Toast for cart actions */
+.cart-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #2c2c2c;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 10000;
+    pointer-events: none;
+    max-width: 90vw;
+    text-align: center;
+}
+
+.cart-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.cart-toast.warning {
+    background: #b3261e;
+}
+
 /* Responsive - Medium screens and small heights */
 @media (max-width: 1024px), (max-height: 800px) {
     .modal-content {
