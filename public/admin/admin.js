@@ -1747,6 +1747,33 @@ async function loadOrders() {
     }
 }
 
+// Determina si una orden es de recolección (pickup) vs envío
+function isPickupOrder(order) {
+    if (order.delivery_method) return order.delivery_method === 'pickup';
+    // Fallback para órdenes sin delivery_method guardado
+    return (order.shipping || 0) === 0 && !order.shipping_carrier && !order.shipping_quotation_id;
+}
+
+// Etiquetas legibles de estado (incluye recolección)
+const ORDER_STATUS_LABELS = {
+    'pagado': 'PAGADO',
+    'procesado': 'PROCESADO',
+    'enviado': 'ENVIADO',
+    'listo_para_recoleccion': 'LISTO PARA RECOLECCIÓN',
+    'entregado': 'ENTREGADO',
+    'pendiente': 'PENDIENTE'
+};
+
+// Estados disponibles según el método de entrega
+function statusOptionsFor(order) {
+    const opts = isPickupOrder(order)
+        ? ['pagado', 'procesado', 'listo_para_recoleccion', 'entregado']
+        : ['pagado', 'procesado', 'enviado', 'entregado'];
+    const current = order.status || 'pendiente';
+    if (!opts.includes(current)) opts.unshift(current);
+    return opts;
+}
+
 function renderOrders() {
     const list = document.getElementById('orders-list');
     if (!list) return;
@@ -1760,6 +1787,7 @@ function renderOrders() {
         'pagado': '#3498db',
         'procesado': '#f39c12',
         'enviado': '#9b59b6',
+        'listo_para_recoleccion': '#16a085',
         'entregado': '#27ae60',
         'pendiente': '#95a5a6'
     };
@@ -1768,6 +1796,7 @@ function renderOrders() {
         'pagado': 'PAGADO',
         'procesado': 'PROCESADO',
         'enviado': 'ENVIADO',
+        'listo_para_recoleccion': 'LISTO PARA RECOLECCIÓN',
         'entregado': 'ENTREGADO',
         'pendiente': 'PENDIENTE'
     };
@@ -1798,8 +1827,8 @@ function renderOrders() {
                     <span class="order-total">$${totalDisplay.toLocaleString('es-MX')} MXN</span>
                     <span>
                         <select class="order-status-select" data-order-id="${order.id}" data-current-status="${status}" style="border: 2px solid ${statusColors[status] || '#ccc'}; border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; color: ${statusColors[status] || '#333'};">
-                            ${['pagado', 'procesado', 'enviado', 'entregado'].map(s =>
-                                `<option value="${s}" ${status === s ? 'selected' : ''}>${statusLabels[s]}</option>`
+                            ${statusOptionsFor(order).map(s =>
+                                `<option value="${s}" ${status === s ? 'selected' : ''}>${statusLabels[s] || s.toUpperCase()}</option>`
                             ).join('')}
                         </select>
                     </span>
@@ -1868,8 +1897,10 @@ function viewOrderDetails(orderId) {
         addressStr = `${address.line1}${address.line2 ? ', ' + address.line2 : ''}, ${address.city || ''}, ${address.state || ''} ${address.postal_code || ''}`;
     }
 
+    const pickup = isPickupOrder(order);
     const shippingDisplay = (order.shipping || 0) / 100;
     const totalDisplay = (order.total || 0) / 100;
+    const statusLabel = ORDER_STATUS_LABELS[order.status] || (order.status || 'pendiente').toUpperCase();
     const dateStr = order.created_at ? new Date(order.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 
     const detailOrderNum = order.order_number ? `LSJ-${String(order.order_number).padStart(5, '0')}` : order.id;
@@ -1884,7 +1915,8 @@ function viewOrderDetails(orderId) {
             ${customer.phone ? `<p><strong>Teléfono:</strong> ${customer.phone}</p>` : ''}
             ${customer.rfc ? `<p><strong>RFC:</strong> ${customer.rfc}</p>` : ''}
             ${addressStr ? `<p><strong>Dirección:</strong> ${addressStr}</p>` : ''}
-            <p><strong>Estado:</strong> ${(order.status || 'pendiente').toUpperCase()}</p>
+            <p><strong>Entrega:</strong> ${pickup ? 'Recolección en oficina' : 'Envío a domicilio'}</p>
+            <p><strong>Estado:</strong> ${statusLabel}</p>
             ${order.shipping_carrier ? `<p><strong>Paquetería:</strong> ${order.shipping_carrier}${order.shipping_service ? ' - ' + order.shipping_service : ''}</p>` : ''}
             ${order.tracking_number ? `<p><strong>Rastreo:</strong> ${order.tracking_url ? `<a href="${order.tracking_url}" target="_blank" style="color: #F5A84F;">${order.tracking_number}</a>` : order.tracking_number}</p>` : ''}
             ${order.label_url ? `<p><a href="${order.label_url}" target="_blank" style="color: #7c3aed; font-weight: 600;">📄 Descargar Guía PDF</a></p>` : ''}
@@ -1897,9 +1929,9 @@ function viewOrderDetails(orderId) {
                 }).join('')}
             </ul>
             <hr style="margin: 12px 0;">
-            <p><strong>Envío:</strong> $${shippingDisplay.toLocaleString('es-MX')} MXN</p>
+            <p><strong>Envío:</strong> ${pickup ? 'Recolección en oficina (sin envío)' : '$' + shippingDisplay.toLocaleString('es-MX') + ' MXN'}</p>
             <p style="font-size: 1.1rem;"><strong>Total: $${totalDisplay.toLocaleString('es-MX')} MXN</strong></p>
-            ${!order.label_url && ['pagado', 'procesado'].includes(order.status) ? `
+            ${!pickup && !order.label_url && ['pagado', 'procesado'].includes(order.status) ? `
             <hr style="margin: 12px 0;">
             <button onclick="openGenerateLabelModal('${order.id}')" style="background: #7c3aed; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%;">📦 Generar Guía de Envío</button>
             ` : ''}

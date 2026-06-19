@@ -552,6 +552,8 @@ app.post('/create-checkout-session', async (req, res) => {
 
         // Crear sesión de Stripe Checkout
         const needsShippingAddress = deliveryMethod !== 'pickup' && !isInternalOrder;
+        // GOCA (interno) y pickup son recolección; el resto es envío
+        const effectiveDeliveryMethod = (isInternalOrder || deliveryMethod === 'pickup') ? 'pickup' : 'shipping';
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: lineItems,
@@ -578,7 +580,7 @@ app.post('/create-checkout-session', async (req, res) => {
             shipping_options: shippingOptions,
             metadata: {
                 items: JSON.stringify(items),
-                deliveryMethod: deliveryMethod || 'shipping',
+                deliveryMethod: effectiveDeliveryMethod,
                 ...(quote && {
                     shippingCarrier: quote.rates.find(r => r.id === selectedRateId)?.carrier || '',
                     shippingService: quote.rates.find(r => r.id === selectedRateId)?.service || '',
@@ -753,6 +755,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                             shipping: shippingCents,
                             total: totalCents,
                             status: 'pagado',
+                            delivery_method: shippingMeta.deliveryMethod || 'shipping',
                             shipping_carrier: shippingMeta.shippingCarrier || null,
                             shipping_service: shippingMeta.shippingService || null,
                             shipping_quotation_id: shippingMeta.shippingQuotationId || null,
@@ -833,7 +836,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                     customer: customerData,
                     items: items,
                     total: totalCents / 100,
-                    shipping: shippingCents / 100
+                    shipping: shippingCents / 100,
+                    delivery_method: session.metadata?.deliveryMethod || 'shipping'
                 };
 
                 await sendOrderConfirmation(orderForEmail);

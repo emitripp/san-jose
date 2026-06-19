@@ -990,7 +990,7 @@ router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
             return res.status(400).json({ error: 'Status is required' });
         }
 
-        const validStatuses = ['pagado', 'procesado', 'enviado', 'entregado'];
+        const validStatuses = ['pagado', 'procesado', 'enviado', 'listo_para_recoleccion', 'entregado'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ error: `Status inválido. Valores permitidos: ${validStatuses.join(', ')}` });
         }

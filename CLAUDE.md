@@ -118,6 +118,7 @@ Ejecutar en orden en Supabase SQL Editor:
 4. `supabase/migration_v4_shipping.sql` - Columnas de envio en orders, tabla shipping_quotes
 5. `supabase/migration_v5_atomic_stock.sql` - Funcion `decrement_product_stock` (stock general atomico)
 6. `supabase/migration_v6_shipping_quotation.sql` - quotation_id en shipping_quotes, shipping_quotation_id y shipping_rate_id en orders
+7. `supabase/migration_v9_delivery_method.sql` - `delivery_method` en orders (shipping|pickup) + estado `listo_para_recoleccion` en el CHECK de status
 
 ## Development Notes
 
@@ -127,7 +128,10 @@ Ejecutar en orden en Supabase SQL Editor:
 - **RLS:** Row Level Security activo. Operaciones admin usan `SUPABASE_SERVICE_ROLE_KEY`.
 - **Paginas dinamicas:** Contenido se renderiza con innerHTML (soporta HTML basico).
 - **Static files:** Express sirve `public/` como directorio estatico. Archivos del backend (server.js, package.json, .env) no son accesibles.
-- **Pedidos:** Estados: pagado -> procesado -> enviado -> entregado. Formato: `LSJ-00001`.
+- **Pedidos:** Formato: `LSJ-00001`. El estado y los correos dependen de `orders.delivery_method`:
+  - **Envío** (`shipping`): pagado -> procesado -> enviado -> entregado. "Enviado" incluye guía Skydropx y rastreo.
+  - **Recolección** (`pickup`, incluye GOCA interno): pagado -> procesado -> listo_para_recoleccion -> entregado. No genera guía; el correo de "listo para recolección" comparte ubicación (TrippGo), horarios y mapa. Constante `PICKUP_LOCATION` en `lib/email.js`.
+  - Cada cambio de estado en el admin dispara `sendStatusUpdate` (correo al cliente). El correo de confirmación (`sendOrderConfirmation`) muestra dirección de envío o nota de recolección según el método.
 - **GA4 ID:** G-JT5P73Z3EV
 
 ## Known Issues
