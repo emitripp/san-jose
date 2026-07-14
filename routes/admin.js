@@ -1094,7 +1094,7 @@ router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
 // POST /api/admin/orders/:id/generate-label - Generate shipping label
 router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
     try {
-        const { rateId, quotationId } = req.body;
+        const { rateId } = req.body;
         if (!rateId) return res.status(400).json({ error: 'rateId es requerido' });
 
         const { data: order, error } = await supabaseAdmin
@@ -1117,7 +1117,13 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
         };
 
         const parcels = order.shipping_packages || skydropx.selectBox(order.items || []);
-        const result = await skydropx.generateLabel(rateId, destination, parcels, quotationId || null);
+
+        // Valor declarado: subtotal de productos en MXN (sin envío)
+        const declaredValue = order.subtotal
+            ? order.subtotal / 100
+            : (order.items || []).reduce((sum, i) => sum + (i.price || 0) * (i.quantity || 1), 0);
+
+        const result = await skydropx.generateLabel(rateId, destination, parcels, declaredValue);
 
         // Update order with tracking info and mark as enviado
         const updateData = {

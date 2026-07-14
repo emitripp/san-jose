@@ -92,8 +92,8 @@ Marketing emails se envian desde `routes/admin.js` POST `/subscribers/send-email
 - `generateLabel(rateId, destination, parcels, quotationId)` crea guia de envio
 - Multi-paquete: cotiza el paquete mas grande y multiplica precio
 - **Cotizacion original se reusa** si la orden tiene < 24h y `shipping_quotation_id` guardado. El admin auto-genera la guia con el rate_id original del cliente sin mostrar opciones.
-- **Docs API:** `https://pro.skydropx.com/es-MX/api-docs`
-- **POST /api/v1/shipments** requiere `consignment_note` (string, codigo SAT Carta Porte, ej: `"53102400"`) y `package_type` (string, codigo empaque, ej: `"4G"` = caja carton) a nivel de shipment (NO dentro de parcels). Tambien requiere `reference` en address_from y address_to.
+- **Docs API:** `https://pro.skydropx.com/es-MX/api-docs` (spec OpenAPI: `https://pro.skydropx.com/es-MX/api-docs.json`)
+- **POST /api/v1/shipments** (formato vigente jul 2026): los paquetes van en un array `packages`, cada uno con `package_number` (indice "1", "2"...), `package_protected` (bool), `declared_value` (number MXN, REQUERIDO aunque no haya seguro), `consignment_note` (codigo SAT Carta Porte, ej `"53102400"`) y `package_type` (ej `"4G"` = caja carton). Las dimensiones NO se mandan: la API las toma de la cotizacion via `rate_id`. `address_from` requiere `reference`; ambos addresses requieren `name`, `company`, `street1`, `phone`, `email`. La respuesta es **202 asincrona**: hay que pollear `GET /api/v1/shipments/{id}` hasta que el package incluido tenga `label_url`/`tracking_number` (ver `pollShipment` en lib/skydropx.js).
 
 ## Environment Variables
 
