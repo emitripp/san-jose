@@ -1024,6 +1024,38 @@ router.patch('/orders/:id/status', verifyAdmin, async (req, res) => {
     }
 });
 
+// Completa una guía cuando Skydropx ya devolvió etiqueta y rastreo.
+// Se mantiene separado del polling para que una guía pendiente pueda retomarse
+// sin volver a crear otro envío.
+async function completeGeneratedLabel(res, order, result) {
+    const updateData = {
+        status: 'enviado',
+        tracking_number: result.trackingNumber || null,
+        tracking_url: result.trackingUrl || null,
+        label_url: result.labelUrl || null,
+        shipment_id: result.shipmentId
+    };
+
+    const { data: updatedOrder, error } = await supabaseAdmin
+        .from('orders')
+        .update(updateData)
+        .eq('id', order.id)
+        .select()
+        .single();
+
+    if (error) throw error;
+
+    if (order.status !== 'enviado') {
+        try {
+            await sendStatusUpdate(updatedOrder, 'enviado');
+        } catch (emailError) {
+            console.error('Error sending shipping status email:', emailError);
+        }
+    }
+
+    return res.json(result);
+}
+
 // POST /api/admin/orders/:id/shipping-rates - Get shipping rates for an order
 router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
     try {
@@ -1094,8 +1126,7 @@ router.post('/orders/:id/shipping-rates', verifyAdmin, async (req, res) => {
 // POST /api/admin/orders/:id/generate-label - Generate shipping label
 router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
     try {
-        const { rateId } = req.body;
-        if (!rateId) return res.status(400).json({ error: 'rateId es requerido' });
+        const { rateId, quotationId } = req.body;
 
         const { data: order, error } = await supabaseAdmin
             .from('orders')
@@ -1103,6 +1134,31 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
             .eq('id', req.params.id)
             .single();
         if (error || !order) return res.status(404).json({ error: 'Orden no encontrada' });
+
+        // Un envío pendiente se puede retomar solamente con su shipment_id;
+        // el rate_id ya no es necesario para consultar su estado.
+        if (!rateId && !order.shipment_id) {
+            return res.status(400).json({ error: 'rateId es requerido' });
+        }
+
+        // Si un intento anterior ya creó el envío, nunca volvemos a hacer POST.
+        // Retomamos el polling usando el ID persistido.
+        if (order.shipment_id) {
+            try {
+                const existingResult = await skydropx.waitForLabel(order.shipment_id);
+                return await completeGeneratedLabel(res, order, existingResult);
+            } catch (resumeError) {
+                if (resumeError.code === 'SHIPMENT_PENDING') {
+                    return res.status(202).json({
+                        pending: true,
+                        shipmentId: resumeError.shipmentId,
+                        status: resumeError.status,
+                        error: resumeError.message
+                    });
+                }
+                throw resumeError;
+            }
+        }
 
         const addr = order.customer?.address || {};
         const destination = {
@@ -1112,6 +1168,11 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
             city: addr.city || '',
             province: addr.state || '',
             zip: addr.postal_code || order.destination_postal_code || '',
+            postal_code: addr.postal_code || order.destination_postal_code || '',
+            area_level1: addr.state || '',
+            area_level2: addr.city || '',
+            area_level3: addr.line2 || '',
+            country_code: 'MX',
             phone: order.customer?.phone || '',
             email: order.customer?.email || ''
         };
@@ -1123,30 +1184,84 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
             ? order.subtotal / 100
             : (order.items || []).reduce((sum, i) => sum + (i.price || 0) * (i.quantity || 1), 0);
 
-        const result = await skydropx.generateLabel(rateId, destination, parcels, declaredValue);
+        const result = await skydropx.generateLabel(
+            rateId,
+            destination,
+            parcels,
+            declaredValue,
+            quotationId || null,
+            async shipmentId => {
+                const { error: persistError } = await supabaseAdmin
+                    .from('orders')
+                    .update({ shipment_id: shipmentId })
+                    .eq('id', req.params.id);
+                if (persistError) throw persistError;
+            }
+        );
 
-        // Update order with tracking info and mark as enviado
-        const updateData = {
-            status: 'enviado',
-            tracking_number: result.trackingNumber,
-            tracking_url: result.trackingUrl,
-            label_url: result.labelUrl,
-            shipment_id: result.shipmentId
-        };
-
-        await supabaseAdmin.from('orders').update(updateData).eq('id', req.params.id);
-
-        // Send tracking email to customer
-        try {
-            await sendStatusUpdate({ ...order, ...updateData }, 'enviado');
-        } catch (emailError) {
-            console.error('Error sending shipping email:', emailError);
-        }
-
-        res.json(result);
+        return await completeGeneratedLabel(res, order, result);
     } catch (error) {
+        if (error.code === 'SHIPMENT_PENDING') {
+            return res.status(202).json({
+                pending: true,
+                shipmentId: error.shipmentId,
+                status: error.status,
+                error: error.message
+            });
+        }
         console.error('Generate label error:', error);
         res.status(500).json({ error: 'Error al generar guía: ' + error.message });
+    }
+});
+
+// POST /api/admin/orders/:id/sync-shipment - Vincular una guía ya existente
+// en Skydropx. Este endpoint nunca crea envíos: solamente consulta el ID recibido.
+router.post('/orders/:id/sync-shipment', verifyAdmin, async (req, res) => {
+    try {
+        const shipmentId = typeof req.body?.shipmentId === 'string'
+            ? req.body.shipmentId.trim()
+            : '';
+
+        if (!/^[A-Za-z0-9-]{6,128}$/.test(shipmentId)) {
+            return res.status(400).json({ error: 'shipmentId inválido' });
+        }
+
+        const { data: order, error } = await supabaseAdmin
+            .from('orders')
+            .select('*')
+            .eq('id', req.params.id)
+            .single();
+        if (error || !order) return res.status(404).json({ error: 'Orden no encontrada' });
+
+        if (order.shipment_id && order.shipment_id !== shipmentId) {
+            return res.status(409).json({ error: 'La orden ya tiene otra guía vinculada' });
+        }
+
+        // Guardar antes de consultar: si Skydropx sigue procesando, el siguiente
+        // intento retomará este ID y jamás volverá a hacer POST /shipments.
+        const { error: persistError } = await supabaseAdmin
+            .from('orders')
+            .update({ shipment_id: shipmentId })
+            .eq('id', order.id);
+        if (persistError) throw persistError;
+
+        try {
+            const result = await skydropx.waitForLabel(shipmentId);
+            return await completeGeneratedLabel(res, order, result);
+        } catch (pollError) {
+            if (pollError.code === 'SHIPMENT_PENDING') {
+                return res.status(202).json({
+                    pending: true,
+                    shipmentId,
+                    status: pollError.status,
+                    error: pollError.message
+                });
+            }
+            throw pollError;
+        }
+    } catch (error) {
+        console.error('Sync shipment error:', error);
+        res.status(500).json({ error: 'Error al sincronizar guía: ' + error.message });
     }
 });
 
