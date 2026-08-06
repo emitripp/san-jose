@@ -1934,8 +1934,8 @@ function viewOrderDetails(orderId) {
             ${!pickup && !order.label_url && ['pagado', 'procesado'].includes(order.status) ? `
             <hr style="margin: 12px 0;">
             <button onclick="openGenerateLabelModal('${order.id}')" style="background: #7c3aed; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%;">📦 Generar Guía de Envío</button>
-            <button onclick="syncExistingShipment('${order.id}')" style="background: #555; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; width: 100%;">🔄 Vincular guía ya existente</button>
-            <small style="display: block; margin-top: 6px; color: #777;">Si Skydropx ya te dio un ID de envío, usa “Vincular” para no crear otra guía.</small>
+            <button onclick="syncExistingShipment('${order.id}')" style="background: #555; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; width: 100%;">🔄 Vincular guía por rastreo</button>
+            <small style="display: block; margin-top: 6px; color: #777;">Captura el número de rastreo visible en Skydropx para no crear otra guía.</small>
             ` : ''}
             ${order.shipment_id ? `
             <button onclick="cancelOrderShipment('${order.id}')" style="background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; margin-top: 8px; width: 100%;">Cancelar Guía</button>
@@ -2659,13 +2659,13 @@ async function generateShippingLabel(orderId, rateId, quotationId) {
 
 async function syncExistingShipment(orderId) {
     showInputPrompt(
-        'Vincular guía existente',
-        'ID del envío en Skydropx',
-        'Ej. e7de78fc-6d05-49f5-a716-ea35b733ed87',
-        async shipmentId => {
-            if (!shipmentId || !shipmentId.trim()) return;
+        'Vincular guía por rastreo',
+        'Número de rastreo',
+        'Ej. 969453010015',
+        async trackingNumber => {
+            if (!trackingNumber || !trackingNumber.trim()) return;
 
-            document.getElementById('confirm-title').textContent = 'Vincular guía existente';
+            document.getElementById('confirm-title').textContent = 'Vincular guía por rastreo';
             document.getElementById('confirm-message').innerHTML = '<p style="text-align:center;">Consultando guía en Skydropx...</p>';
             document.getElementById('confirm-modal').classList.add('active');
 
@@ -2673,7 +2673,7 @@ async function syncExistingShipment(orderId) {
                 const res = await fetch(`${API_BASE}/orders/${orderId}/sync-shipment`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shipmentId: shipmentId.trim() })
+                    body: JSON.stringify({ trackingNumber: trackingNumber.trim() })
                 });
                 const data = await res.json();
                 if (!res.ok && res.status !== 202) throw new Error(data.error);

@@ -1215,15 +1215,19 @@ router.post('/orders/:id/generate-label', verifyAdmin, async (req, res) => {
 });
 
 // POST /api/admin/orders/:id/sync-shipment - Vincular una guía ya existente
-// en Skydropx. Este endpoint nunca crea envíos: solamente consulta el ID recibido.
+// en Skydropx. Este endpoint nunca crea envíos: resuelve el tracking visible
+// al shipment_id interno y después consulta el estado de esa guía.
 router.post('/orders/:id/sync-shipment', verifyAdmin, async (req, res) => {
     try {
-        const shipmentId = typeof req.body?.shipmentId === 'string'
+        let shipmentId = typeof req.body?.shipmentId === 'string'
             ? req.body.shipmentId.trim()
             : '';
+        const trackingNumber = typeof req.body?.trackingNumber === 'string'
+            ? req.body.trackingNumber.trim()
+            : '';
 
-        if (!/^[A-Za-z0-9-]{6,128}$/.test(shipmentId)) {
-            return res.status(400).json({ error: 'shipmentId inválido' });
+        if (!shipmentId && !/^[A-Za-z0-9#-]{6,64}$/.test(trackingNumber)) {
+            return res.status(400).json({ error: 'Número de rastreo inválido' });
         }
 
         const { data: order, error } = await supabaseAdmin
@@ -1232,6 +1236,18 @@ router.post('/orders/:id/sync-shipment', verifyAdmin, async (req, res) => {
             .eq('id', req.params.id)
             .single();
         if (error || !order) return res.status(404).json({ error: 'Orden no encontrada' });
+
+        if (!shipmentId) {
+            const match = await skydropx.findShipmentByTracking(trackingNumber, order.shipping_carrier);
+            if (!match) {
+                return res.status(404).json({ error: 'No se encontró un envío con ese número de rastreo' });
+            }
+            shipmentId = match.shipmentId;
+        }
+
+        if (!/^[A-Za-z0-9-]{6,128}$/.test(shipmentId)) {
+            return res.status(400).json({ error: 'shipment_id inválido' });
+        }
 
         if (order.shipment_id && order.shipment_id !== shipmentId) {
             return res.status(409).json({ error: 'La orden ya tiene otra guía vinculada' });
